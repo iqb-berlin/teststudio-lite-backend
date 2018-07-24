@@ -159,6 +159,24 @@ class DBConnectionSuperAdmin extends DBConnection {
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+    // sets password of the given user
+    // returns false if token not valid or user not found
+    // token is refreshed via isSuperAdmin
+    public function setPassword($token, $username, $password) {
+        $myreturn = false;
+        if ($this->isSuperAdmin($token)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'UPDATE users SET password = :password WHERE name = :user_name');
+            if ($sql -> execute(array(
+                ':user_name' => $username,
+                ':password' => $this->encryptPassword($password)))) {
+                $myreturn = true;
+            }
+        }
+        return $myreturn;
+    }
+
+    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // adds new user if no user with the given name exists
     // returns true if ok, false if admin-token not valid or user already exists
     // token is refreshed via isSuperAdmin
@@ -175,13 +193,12 @@ class DBConnectionSuperAdmin extends DBConnection {
                     
                 $data = $sql -> fetch(PDO::FETCH_ASSOC);
                 if ($data == false) {
-                    $passwort_sha = sha1('t' . $password);
                     $sql = $this->pdoDBhandle->prepare(
                         'INSERT INTO users (name, password) VALUES (:user_name, :user_password)');
                         
                     if ($sql -> execute(array(
                         ':user_name' => $username,
-                        ':user_password' => $passwort_sha))) {
+                        ':user_password' => $this->encryptPassword($password)))) {
                             
                         $myreturn = true;
                     }
@@ -191,5 +208,28 @@ class DBConnectionSuperAdmin extends DBConnection {
             
         return $myreturn;
     }
+
+    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+    // deletes users
+    // returns false if token not valid or any delete action failed
+    // token is refreshed via isSuperAdmin
+    public function deleteUsers($token, $usernames) {
+        $myreturn = false;
+        if ($this->isSuperAdmin($token)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'DELETE FROM users
+                    WHERE users.name = :user_name');
+        
+            $myreturn = true;
+            foreach ($usernames as $username) {
+                if (!$sql->execute(array(
+                        ':user_name' => $username))) {
+                    $myreturn = false;
+                }
+            }
+        }
+        return $myreturn;
+    }
+
 }
 ?>

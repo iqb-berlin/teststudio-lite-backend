@@ -48,6 +48,12 @@ class DBConnection {
         }
     }
 
+    // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+    // encrypts password to introduce a very private way (salt)
+    protected function encryptPassword($password) {
+        return sha1('t' . $password);
+    }
+
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // deletes all tokens of this user if any and creates new token
     public function login($username, $password) {
@@ -55,14 +61,13 @@ class DBConnection {
 
         if (($this->pdoDBhandle != false) and (strlen($username) > 0) and (strlen($username) < 50) 
                         and (strlen($password) > 0) and (strlen($password) < 50)) {
-            $passwort_sha = sha1('t' . $password);
             $sql_select = $this->pdoDBhandle->prepare(
                 'SELECT * FROM users
                     WHERE users.name = :name AND users.password = :password');
                 
             if ($sql_select->execute(array(
                 ':name' => $username, 
-                ':password' => $passwort_sha))) {
+                ':password' => $this->encryptPassword($password)))) {
 
                 $selector = $sql_select->fetch(PDO::FETCH_ASSOC);
                 if ($selector != false) {
