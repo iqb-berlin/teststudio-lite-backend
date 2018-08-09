@@ -368,5 +368,21 @@ class DBConnectionSuperAdmin extends DBConnection {
     }
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
 
+    public function getItemAuthoringTools($token) {
+        $myreturn = [];
+        if ($this->isSuperAdmin($token)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT workspaces.id as id, workspaces.name as label FROM workspaces ORDER BY workspaces.name');
+        
+            if ($sql -> execute()) {
+
+                $data = $sql->fetchAll(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data;
+                }
+            }
+        }
+        return $myreturn;
+    }
 }
 ?>

@@ -9,7 +9,7 @@
 		exit();
 	} else {
 
-		require_once('../items_code/DBConnectionSuperadmin.php');
+		require_once('../itemdb_code/DBConnectionSuperadmin.php');
 
 		// Authorisation
 		$myerrorcode = 503;

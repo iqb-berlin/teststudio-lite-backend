@@ -12,7 +12,7 @@ class DBConnection {
     // __________________________
     public function __construct() {
         try {
-            $this->pdoDBhandle = new PDO("pgsql:host=moodledb.cms.hu-berlin.de;port=5432;dbname=iqbw2p04;user=iqbw2p04;password=Hufeisen%Glasuren%Hagel%Pult%Matrose%Allmacht");
+            $this->pdoDBhandle = new PDO("pgsql:host=moodledb.cms.hu-berlin.de;port=5432;dbname=itemdbiqb;user=itemdbiqb;password=Revisor%Ordnern%Helm%Belfast%Airbag%Mammut");
             $this->pdoDBhandle->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch(PDOException $e) {
             $this->errorMsg = $e->getMessage();
@@ -39,7 +39,7 @@ class DBConnection {
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE sessions
                 SET valid_until =:value
-                WHERE id =:token');
+                WHERE token =:token');
 
         if ($sql_update != false) {
             $sql_update->execute(array(
@@ -83,15 +83,15 @@ class DBConnection {
                     }
 
                     // create new token
-                    $myToken = uniqid('a', true);
+                    $myToken = uniqid('t', true);
                     
                     $sql_insert = $this->pdoDBhandle->prepare(
-                        'INSERT INTO sessions (id, user_id, valid_until) 
-                            VALUES(:id, :user_id, :valid_until)');
+                        'INSERT INTO sessions (token, user_id, valid_until) 
+                            VALUES(:token, :user_id, :valid_until)');
 
                     if ($sql_insert != false) {
                         if ($sql_insert->execute(array(
-                            ':id' => $myToken,
+                            ':token' => $myToken,
                             ':user_id' => $selector['id'],
                             ':valid_until' => date('Y-m-d G:i:s', time() + $this->idletime)))) {
 
@@ -111,7 +111,7 @@ class DBConnection {
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'DELETE FROM sessions 
-                    WHERE sessions.id=:token');
+                    WHERE sessions.token=:token');
             if ($sql != false) {
                 if ($sql -> execute(array(
                     ':token'=> $token))) {
@@ -132,7 +132,7 @@ class DBConnection {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.name FROM users
                     INNER JOIN sessions ON users.id =sessions.user_id
-                    WHERE sessions.id=:token');
+                    WHERE sessions.token=:token');
     
             if ($sql != false) {
                 if ($sql->execute(array(
@@ -159,7 +159,7 @@ class DBConnection {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.is_superadmin FROM users
                     INNER JOIN sessions ON users.id = sessions.user_id
-                    WHERE sessions.id=:token');
+                    WHERE sessions.token=:token');
     
             if ($sql != false) {
                 if ($sql -> execute(array(

@@ -10,7 +10,7 @@
 	} else {
 		$myreturn = false;
 		$myerrorcode = 503;
-		require_once('items_code/DBConnection.php');
+		require_once('itemdb_code/DBConnection.php');
 
 		$myDBConnection = new DBConnection();
 		if (!$myDBConnection->isError()) {

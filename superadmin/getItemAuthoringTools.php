@@ -8,7 +8,7 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../itemdb_code/DBConnectionSuperadmin.php');
+		require_once('../itemdb_code/DBConnection.php');
 
 		// *****************************************************************
 
@@ -16,16 +16,18 @@
 
 		$myerrorcode = 503;
 
-		$myDBConnection = new DBConnectionSuperadmin();
+		$myDBConnection = new DBConnection();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
 
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$wsId = $data["ws"];
 			if (isset($myToken)) {
-				$myreturn = $myDBConnection->getUsersByWorkspace($myToken, $wsId);
-				$myerrorcode = 0;
+				if ($myDBConnection->isSuperAdmin($myToken)) {
+					$myerrorcode = 0;
+					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+					$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList();
+				}
 			}
 		}        
 		unset($myDBConnection);

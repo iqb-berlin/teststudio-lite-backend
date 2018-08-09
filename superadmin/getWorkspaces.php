@@ -8,7 +8,7 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../items_code/DBConnectionSuperadmin.php');
+		require_once('../itemdb_code/DBConnectionSuperadmin.php');
 
 		// *****************************************************************
 
