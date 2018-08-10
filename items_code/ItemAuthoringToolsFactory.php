@@ -1,6 +1,7 @@
 <?php
 
 class ResourceFile {
+    public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
     private $isXml = false;
     private $size = 0;
     private $filedate;
@@ -39,17 +40,26 @@ class ResourceFile {
     }
 
     public function getFileSizeString() {
-        return FileFactory::filesizeAsString($this->size);
+        return ResourceFile::filesizeAsString($this->size);
     }
 
     public function getIsXml() {
         return $this->isXml;
     }
+
+    // __________________________
+    public static function filesizeAsString ( $filesize ) {
+        if ($filesize == 0) {
+            return '-';
+        } else {
+            return round($filesize/pow(1024, ($i = floor(log($filesize, 1024)))), 2) . ' ' . ResourceFile::$sizes[$i];
+        }
+    }
+    
 }
 
 // #################################################################################################
 class ItemAuthoringToolsFactory {
-    private static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
     private static $itemauthoringpath = '../itemauthoringtools';
     private static $itemauthoringMetadataFilename = '../itemauthoringtools/metadata.xml';
 
@@ -196,15 +206,53 @@ class ItemAuthoringToolsFactory {
         return $myreturn;
     }
 
-    // __________________________
-    static function filesizeAsString ( $filesize ) {
-        if ($filesize == 0) {
-            return '-';
-        } else {
-            return round($filesize/pow(1024, ($i = floor(log($filesize, 1024)))), 2) . ' ' . FileFactory::$sizes[$i];
+    static function getItemAuthoringToolFileList($id) {
+        $myreturn = [];
+        $myfolder = ItemAuthoringToolsFactory::$itemauthoringpath;
+        if (file_exists($myfolder)) {
+            $itemAuthoringToolFolder = $myfolder . '/' . $id;
+            if (file_exists($itemAuthoringToolFolder)) {
+                $mydir = opendir($itemAuthoringToolFolder);
+                while (($entry = readdir($mydir)) !== false) {
+                    $fullfilename = $itemAuthoringToolFolder . '/' . $entry;
+                    if (is_file($fullfilename)) {
+                        $rs = new ResourceFile($entry, filemtime($fullfilename), filesize($fullfilename));
+        
+                        array_push($myreturn, [
+                            'filename' => $rs->getFileName(),
+                            'filesize' => $rs->getFileSize(),
+                            'filesizestr' => $rs->getFileSizeString(),
+                            'filedatetime' => $rs->getFileDateTime(),
+                            'filedatetimestr' => $rs->getFileDateTimeString(),
+                            'selected' => false
+                        ]);
+                    }
+                }
+            }
         }
+        return $myreturn;
     }
 
-
+    static function deleteItemAuthoringToolFiles($id, $files) {
+        $myreturn = '??';
+        $myfolder = ItemAuthoringToolsFactory::$itemauthoringpath;
+        if (file_exists($myfolder)) {
+            $itemAuthoringToolFolder = $myfolder . '/' . $id;
+            if (file_exists($itemAuthoringToolFolder)) {
+                $fcount = 0;
+                foreach ($files as $file) {
+                    $fullfilename = $itemAuthoringToolFolder . '/' . $file;
+                    if (file_exists($fullfilename)) {
+                        if (!is_dir($fullfilename)) {
+                            unlink($fullfilename);
+                            $fcount = $fcount + 1;
+                        }
+                    }
+                }
+                $myreturn = $fcount .  ' Datei(en) gelöscht.';
+            }
+        }
+        return $myreturn;
+    }
 }
 ?>
