@@ -176,5 +176,41 @@ class DBConnection {
         }
         return $myreturn;
     }
+
+    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+    // returns true if the user with given (valid) token is superadmin
+    // refreshes token
+    public function canAccessWorkspace($token, $workspaceId) {
+        $myreturn = false;
+        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
+            $sqlUserId = $this->pdoDBhandle->prepare(
+                'SELECT users.id FROM users
+                    INNER JOIN sessions ON users.id = sessions.user_id
+                    WHERE sessions.token=:token');
+    
+            if ($sqlUserId != false) {
+                if ($sqlUserId -> execute(array(
+                    ':token' => $token))) {
+
+                    $first = $sqlUserId -> fetch(PDO::FETCH_ASSOC);
+
+                    if ($first != false) {
+                        $this->refreshSession($token);
+                        $sqlWorkspace = $this->pdoDBhandle->prepare(
+                            'SELECT workspace_users.workspace_id FROM workspace_users
+                                WHERE workspace_users.workspace_id=:wsId and workspace_users.user_id=:userId');
+            
+                        if ($sqlWorkspace -> execute(array(
+                            ':wsId' => $workspaceId, ':userId' => $first['id']))) {
+
+                            $first = $sqlWorkspace -> fetch(PDO::FETCH_ASSOC);
+                            $myreturn = $first != false;
+                        }
+                    }
+                }
+            }
+        }
+        return $myreturn;
+    }
 }
 ?>
