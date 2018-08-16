@@ -76,6 +76,27 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function getUnitProperties($wsId, $unitId) {
+        $myreturn = [];
+        if (($this->pdoDBhandle != false) and ($wsId > 0)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT units.id, units.key, units.label, units.description, units.lastchanged FROM units
+                    WHERE units.id =:id and units.workspace_id=:ws');
+        
+            if ($sql -> execute(array(
+                ':ws' => $wsId,
+                ':id' => $unitId))) {
+
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data;
+                    setlocale(LC_TIME, "de_DE");
+                    $myreturn['lastchangedStr'] = strftime('%x', $data['lastchanged']);
+                }
+            }
+        }
+        return $myreturn;
+    }
     /*
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns the name of the workspace given by id
