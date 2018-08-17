@@ -91,7 +91,8 @@ class DBConnectionAuthoring extends DBConnection {
                 if ($data != false) {
                     $myreturn = $data;
                     setlocale(LC_TIME, "de_DE");
-                    $myreturn['lastchangedStr'] = strftime('%x', $data['lastchanged']);
+                    $myreturn['lastchangedStr'] = strftime("%d.%m.%Y %H:%M",strtotime($data['lastchanged']));
+                    // $myreturn['lastchangedStr'] = strftime('%x', $data['lastchanged']);
                 }
             }
         }
