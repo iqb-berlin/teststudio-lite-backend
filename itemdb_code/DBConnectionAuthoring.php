@@ -21,7 +21,6 @@ class DBConnectionAuthoring extends DBConnection {
 
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
                 if ($data != false) {
-                    $this->refreshSession($token);
                     $myreturn = $data;
                 }
             }
@@ -115,6 +114,24 @@ class DBConnectionAuthoring extends DBConnection {
                     $myreturn = $data;
                 }
             }
+        }
+        return $myreturn;
+    }
+
+    public function changeUnitProps($myId, $myKey, $myLabel, $myDescription) {
+        $myreturn = false;
+        $sql_update = $this->pdoDBhandle->prepare(
+            'UPDATE units
+                SET key =:key, label=:label, description=:description
+                WHERE id =:id');
+
+        if ($sql_update != false) {
+            $myreturn = $sql_update->execute(array(
+                ':id' => $myId,
+                ':key' => $myKey,
+                ':label'=> $myLabel,
+                ':description'=>$myDescription
+            ));
         }
         return $myreturn;
     }
