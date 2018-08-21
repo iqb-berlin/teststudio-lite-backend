@@ -12,7 +12,7 @@
 
 		// *****************************************************************
 
-		$myreturn = [];
+		$myreturn = false;
 
 		$myerrorcode = 503;
 
@@ -26,11 +26,9 @@
 			if (isset($myToken)) {
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
-					$myUnitId = $data["u"];
-					$myreturn = $myDBConnection->getUnitDesignData($myWorkspace, $myUnitId);
-
-					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
-					$myreturn['authoringtoolLink'] = ItemAuthoringToolsFactory::getItemAuthoringToolLinkById($myreturn['authoringtool_id']);
+					$myId = $data["u"];
+					$myToolId = $data["ati"];
+					$myreturn = $myDBConnection->setUnitAuthoringTool($myId, $myToolId);
 				}
 			}
 		}        

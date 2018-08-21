@@ -136,6 +136,22 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function setUnitAuthoringTool($myId, $myTool) {
+        $myreturn = false;
+        $sql_update = $this->pdoDBhandle->prepare(
+            'UPDATE units
+                SET authoringtool_id =:at
+                WHERE id =:id');
+
+        if ($sql_update != false) {
+            $myreturn = $sql_update->execute(array(
+                ':id' => $myId,
+                ':at' => $myTool
+            ));
+        }
+        return $myreturn;
+    }
+
     /*
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns the name of the workspace given by id

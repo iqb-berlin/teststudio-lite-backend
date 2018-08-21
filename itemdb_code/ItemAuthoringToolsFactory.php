@@ -61,6 +61,7 @@ class ResourceFile {
 // #################################################################################################
 class ItemAuthoringToolsFactory {
     private static $itemauthoringpath = '../itemauthoringtools';
+    private static $pathprefixForItemauthoringTools = 'itemauthoringtools';
     private static $itemauthoringMetadataFilename = '../itemauthoringtools/metadata.xml';
 
     private static function addOrRenameMetadata($id, $name) {
@@ -250,6 +251,25 @@ class ItemAuthoringToolsFactory {
                     }
                 }
                 $myreturn = $fcount .  ' Datei(en) gelöscht.';
+            }
+        }
+        return $myreturn;
+    }
+
+    // __________________________
+    static function getItemAuthoringToolLinkById($authoring_id) {
+        $myreturn = '';
+        $myfolder = ItemAuthoringToolsFactory::$itemauthoringpath;
+        if (file_exists($myfolder)) {
+            $myAuthoringToolFolder = $myfolder . '/' . $authoring_id;
+            if (file_exists($myAuthoringToolFolder)) {
+                $mydir = opendir($myAuthoringToolFolder);
+                while (($entry = readdir($mydir)) !== false) {
+                    if (preg_match("/\.HTML$/", strtoupper($entry)) == true) {
+                        $myreturn = ItemAuthoringToolsFactory::$pathprefixForItemauthoringTools . '/' . $authoring_id . '/' . $entry;
+                        break;
+                    }
+                }
             }
         }
         return $myreturn;
