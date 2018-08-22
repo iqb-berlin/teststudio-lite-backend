@@ -152,6 +152,22 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function setUnitDefinition($myId, $myUnitdef, $playerId) {
+        $myreturn = false;
+        $sql_update = $this->pdoDBhandle->prepare(
+            'UPDATE units
+                SET def =:ud, player_id=:pl
+                WHERE id =:id');
+
+        if ($sql_update != false) {
+            $myreturn = $sql_update->execute(array(
+                ':id' => $myId,
+                ':pl' => $playerId,
+                ':ud' => $myUnitdef
+            ));
+        }
+        return $myreturn;
+    }
     /*
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns the name of the workspace given by id
