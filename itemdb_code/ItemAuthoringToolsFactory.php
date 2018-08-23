@@ -121,7 +121,7 @@ class ItemAuthoringToolsFactory {
     }
 
     // __________________________
-    static function getItemAuthoringToolsList() {
+    static function getItemAuthoringToolsList($validOnly) {
         $myreturn = [];
         $myfolder = ItemAuthoringToolsFactory::$itemauthoringpath;
         if (file_exists($myfolder)) {
@@ -140,11 +140,13 @@ class ItemAuthoringToolsFactory {
             while (($entry = readdir($mydir)) !== false) {
                 $fullname = $myfolder . '/' . $entry;
                 if (is_dir($fullname) and ($entry !== '.') and ($entry !== '..')) {
-                    // error_log('PHP Notice: ' . $nameList[$entry]);
-                    array_push($myreturn, [
-                        'id' => $entry,
-                        'label' => array_key_exists($entry, $nameList) ? $nameList[$entry] : $entry,
-                        'selected' => false]);
+                    $toolLink = ItemAuthoringToolsFactory::getItemAuthoringToolLinkById($entry);
+                    if ((strlen($toolLink) > 0) || (!$validOnly)) {
+                        array_push($myreturn, [
+                            'id' => $entry,
+                            'label' => array_key_exists($entry, $nameList) ? $nameList[$entry] : $entry,
+                            'link' => $toolLink]);
+                    }
                 }
             }
         }

@@ -14,7 +14,7 @@
 		$myreturn = [];
 
 		require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
-		$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList();
+		$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList(true);
 
 		echo(json_encode($myreturn));
 	}

@@ -8,28 +8,26 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../itemdb_code/DBConnection.php');
+		require_once('../itemdb_code/DBConnectionAuthoring.php');
 
 		// *****************************************************************
 
-		$myreturn = [];
+		$myreturn = false;
 
 		$myerrorcode = 503;
 
-		$myDBConnection = new DBConnection();
+		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
-			$myerrorcode = 401;
-
 			$data = json_decode(file_get_contents('php://input'), true);
-			$myToken = $data["t"];
-			if (isset($myToken)) {
-				if ($myDBConnection->isSuperAdmin($myToken)) {
-					$myerrorcode = 0;
-					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
-					$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList(false);
-				}
+			$myerrorcode = 0;
+			$myUnitId = $data["u"];
+			$myToolId = $myDBConnection->getUnitAuthoringTool($myUnitId);
+			if (strlen($myToolId) > 0) {
+				require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+				$myLink = ItemAuthoringToolsFactory::getItemAuthoringToolLinkById($myToolId);
+				$myreturn = strlen($myLink) > 0;
 			}
-		}        
+		}
 		unset($myDBConnection);
 
 		if ($myerrorcode > 0) {

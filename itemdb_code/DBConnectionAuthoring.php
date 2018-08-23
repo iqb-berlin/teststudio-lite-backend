@@ -79,7 +79,8 @@ class DBConnectionAuthoring extends DBConnection {
         $myreturn = [];
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT units.id, units.key, units.label, units.description, units.lastchanged FROM units
+                'SELECT units.id, units.key, units.label, units.description, 
+                    units.lastchanged, units.authoringtool_id as authoringtoolId FROM units
                     WHERE units.id =:id and units.workspace_id=:ws');
         
             if ($sql -> execute(array(
@@ -112,6 +113,25 @@ class DBConnectionAuthoring extends DBConnection {
                 $data = $sql -> fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
+                }
+            }
+        }
+        return $myreturn;
+    }
+
+    public function getUnitAuthoringTool($unitId) {
+        $myreturn = '';
+        if (($this->pdoDBhandle != false) and ($unitId > 0)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT units.authoringtool_id FROM units
+                    WHERE units.id =:id');
+        
+            if ($sql -> execute(array(
+                ':id' => $unitId))) {
+
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data['authoringtool_id'];
                 }
             }
         }
