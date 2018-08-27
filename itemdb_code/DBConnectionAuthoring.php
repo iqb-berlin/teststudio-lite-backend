@@ -134,6 +134,26 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function getUnitPreviewData($wsId, $unitId) {
+        $myreturn = [];
+        if (($this->pdoDBhandle != false) and ($wsId > 0)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT units.id, units.key, units.label, units.def, units.player_id FROM units
+                    WHERE units.id =:id and units.workspace_id=:ws');
+        
+            if ($sql -> execute(array(
+                ':ws' => $wsId,
+                ':id' => $unitId))) {
+
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data;
+                }
+            }
+        }
+        return $myreturn;
+    }
+
     public function getUnitAuthoringTool($unitId) {
         $myreturn = '';
         if (($this->pdoDBhandle != false) and ($unitId > 0)) {

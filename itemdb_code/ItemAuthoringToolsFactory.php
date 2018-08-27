@@ -61,7 +61,9 @@ class ResourceFile {
 // #################################################################################################
 class ItemAuthoringToolsFactory {
     private static $itemauthoringpath = '../itemauthoringtools';
+    private static $itemplayerpath = '../itemplayers';
     private static $pathprefixForItemauthoringTools = 'itemauthoringtools';
+    private static $pathprefixForItemplayers = 'itemplayers';
     private static $itemauthoringMetadataFilename = '../itemauthoringtools/metadata.xml';
 
     private static function addOrRenameMetadata($id, $name) {
@@ -276,5 +278,17 @@ class ItemAuthoringToolsFactory {
         }
         return $myreturn;
     }
+
+    // __________________________
+    static function getItemPlayerById($player_id) {
+        $myreturn = '';
+         
+        $myFile = ItemAuthoringToolsFactory::$itemplayerpath . '/' . $player_id . '.html';
+        if (file_exists($myFile)) {
+            $myreturn = file_get_contents($myFile); // ItemAuthoringToolsFactory::$pathprefixForItemplayers . '/' . $player_id . '.html';
+        }
+        return $myreturn;
+    }
+    
 }
 ?>
