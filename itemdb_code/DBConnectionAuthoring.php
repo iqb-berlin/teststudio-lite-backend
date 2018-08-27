@@ -75,6 +75,21 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function deleteUnits($workspaceId, $unitIds) {
+        $myreturn = false;
+        $sql = $this->pdoDBhandle->prepare(
+            'DELETE FROM units
+                WHERE units.workspace_id = :ws and units.id in (' . implode(',', $unitIds) . ')');
+            
+        if ($sql -> execute(array(
+            ':ws' => $workspaceId))) {
+                
+            $myreturn = true;
+        }
+            
+        return $myreturn;
+    }
+
     public function getUnitProperties($wsId, $unitId) {
         $myreturn = [];
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
