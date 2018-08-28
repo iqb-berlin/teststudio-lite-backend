@@ -237,6 +237,31 @@ class ItemAuthoringToolsFactory {
         }
         return $myreturn;
     }
+    
+    static function getItemPlayerFileList() {
+        $myreturn = [];
+        $myfolder = ItemAuthoringToolsFactory::$itemplayerpath;
+        if (file_exists($myfolder)) {
+            $mydir = opendir($myfolder);
+            while (($entry = readdir($mydir)) !== false) {
+                $fullfilename = $myfolder . '/' . $entry;
+                if (is_file($fullfilename)) {
+                    $rs = new ResourceFile($entry, filemtime($fullfilename), filesize($fullfilename));
+    
+                    array_push($myreturn, [
+                        'filename' => $rs->getFileName(),
+                        'filesize' => $rs->getFileSize(),
+                        'filesizestr' => $rs->getFileSizeString(),
+                        'filedatetime' => $rs->getFileDateTime(),
+                        'filedatetimestr' => $rs->getFileDateTimeString(),
+                        'selected' => false
+                    ]);
+                }
+            }
+        }
+        return $myreturn;
+    }
+
 
     static function deleteItemAuthoringToolFiles($id, $files) {
         $myreturn = '??';
@@ -256,6 +281,25 @@ class ItemAuthoringToolsFactory {
                 }
                 $myreturn = $fcount .  ' Datei(en) gelöscht.';
             }
+        }
+        return $myreturn;
+    }
+    
+    static function deleteItemPlayerFiles($files) {
+        $myreturn = '??';
+        $myfolder = ItemAuthoringToolsFactory::$itemplayerpath;
+        if (file_exists($myfolder)) {
+            $fcount = 0;
+            foreach ($files as $file) {
+                $fullfilename = $myfolder . '/' . $file;
+                if (file_exists($fullfilename)) {
+                    if (!is_dir($fullfilename)) {
+                        unlink($fullfilename);
+                        $fcount = $fcount + 1;
+                    }
+                }
+            }
+            $myreturn = $fcount .  ' Datei(en) gelöscht.';
         }
         return $myreturn;
     }
@@ -279,6 +323,29 @@ class ItemAuthoringToolsFactory {
         return $myreturn;
     }
 
+    // __________________________
+    static function getItemAuthoringFolder($authoring_id) {
+        $myreturn = '';
+        $myfolder = ItemAuthoringToolsFactory::$itemauthoringpath;
+        if (file_exists($myfolder)) {
+            $myAuthoringToolFolder = $myfolder . '/' . $authoring_id;
+            if (file_exists($myAuthoringToolFolder)) {
+                $myreturn = $myAuthoringToolFolder;
+            }
+        }
+        return $myreturn;
+    }
+
+    // __________________________
+    static function getItemPlayerFolder() {
+        $myreturn = '';
+        $myfolder = ItemAuthoringToolsFactory::$itemplayerpath;
+        if (file_exists($myfolder)) {
+                $myreturn = $myfolder;
+        }
+        return $myreturn;
+    }
+    
     // __________________________
     static function getItemPlayerLinkById($player_id) {
         $myreturn = '';
