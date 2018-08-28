@@ -280,6 +280,17 @@ class ItemAuthoringToolsFactory {
     }
 
     // __________________________
+    static function getItemPlayerLinkById($player_id) {
+        $myreturn = '';
+         
+        $myFile = ItemAuthoringToolsFactory::$itemplayerpath . '/' . $player_id . '.html';
+        if (file_exists($myFile)) {
+            $myreturn = $myFile;
+        }
+        return $myreturn;
+    }
+    
+    // __________________________
     static function getItemPlayerById($player_id) {
         $myreturn = '';
          
