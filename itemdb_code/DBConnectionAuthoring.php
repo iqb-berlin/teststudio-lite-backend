@@ -62,12 +62,14 @@ class DBConnectionAuthoring extends DBConnection {
     public function addUnit($workspaceId, $key, $label) {
         $myreturn = false;
         $sql = $this->pdoDBhandle->prepare(
-            'INSERT INTO units (workspace_id, key, label) VALUES (:workspace, :key, :label)');
+            'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)');
             
         if ($sql -> execute(array(
             ':workspace' => $workspaceId,
             ':key' => $key,
-            ':label' => $label))) {
+            ':label' => $label,
+            ':now' => date('Y-m-d G:i:s', time())
+            ))) {
                 
             $myreturn = true;
         }
@@ -196,7 +198,7 @@ class DBConnectionAuthoring extends DBConnection {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET key =:key, label=:label, description=:description
+                SET key =:key, label=:label, description=:description, lastchanged=:now
                 WHERE id =:id');
 
         if ($sql_update != false) {
@@ -204,7 +206,8 @@ class DBConnectionAuthoring extends DBConnection {
                 ':id' => $myId,
                 ':key' => $myKey,
                 ':label'=> $myLabel,
-                ':description'=>$myDescription
+                ':description'=>$myDescription,
+                ':now' => date('Y-m-d G:i:s', time())
             ));
         }
         return $myreturn;
@@ -214,13 +217,14 @@ class DBConnectionAuthoring extends DBConnection {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET authoringtool_id =:at
+                SET authoringtool_id =:at, lastchanged=:now
                 WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
                 ':id' => $myId,
-                ':at' => $myTool
+                ':at' => $myTool,
+                ':now' => date('Y-m-d G:i:s', time())
             ));
         }
         return $myreturn;
@@ -230,42 +234,18 @@ class DBConnectionAuthoring extends DBConnection {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET def =:ud, player_id=:pl
+                SET def =:ud, player_id=:pl, lastchanged=:now
                 WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
                 ':id' => $myId,
                 ':pl' => $playerId,
-                ':ud' => $myUnitdef
+                ':ud' => $myUnitdef,
+                ':now' => date('Y-m-d G:i:s', time())
             ));
         }
         return $myreturn;
     }
-    /*
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns the name of the workspace given by id
-    // returns '' if not found
-    // token is not refreshed
-    public function getWorkspaceName($workspace_id) [
-        $myreturn = '';
-        if ($this->pdoDBhandle != false) [
-
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.name FROM workspaces
-                    WHERE workspaces.id=:workspace_id');
-                
-            if ($sql -> execute(array(
-                ':workspace_id' => $workspace_id))) [
-                    
-                $data = $sql -> fetch(PDO::FETCH_ASSOC);
-                if ($data != false) [
-                    $myreturn = $data['name'];
-                ]
-            ]
-        ]
-            
-        return $myreturn;
-    ] */
 }
 ?>
