@@ -8,7 +8,7 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../itemdb_code/DBConnectionAuthoring.php');
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
 		// *****************************************************************
 
@@ -23,7 +23,7 @@
 			$myUnitId = $data["u"];
 			$myPlayerId = $myDBConnection->getUnitItemPlayerId($myUnitId);
 			if (strlen($myPlayerId) > 0) {
-				require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+				require_once('../vo_code/ItemAuthoringToolsFactory.php');
 				$myLink = ItemAuthoringToolsFactory::getItemPlayerLinkById($myPlayerId);
 				$myreturn = strlen($myLink) > 0;
 			}

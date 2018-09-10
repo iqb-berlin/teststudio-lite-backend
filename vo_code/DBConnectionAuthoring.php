@@ -59,19 +59,54 @@ class DBConnectionAuthoring extends DBConnection {
     // adds new user if no user with the given name exists
     // returns true if ok, false if admin-token not valid or user already exists
     // token is refreshed via isSuperAdmin
-    public function addUnit($workspaceId, $key, $label) {
+    public function addUnit($workspaceId, $key, $label, $sourceUnit) {
         $myreturn = false;
-        $sql = $this->pdoDBhandle->prepare(
-            'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)');
-            
-        if ($sql -> execute(array(
-            ':workspace' => $workspaceId,
-            ':key' => $key,
-            ':label' => $label,
-            ':now' => date('Y-m-d G:i:s', time())
-            ))) {
+        if ($sourceUnit == 0) {
+            $sql = $this->pdoDBhandle->prepare(
+                'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)');
                 
-            $myreturn = true;
+            if ($sql -> execute(array(
+                ':workspace' => $workspaceId,
+                ':key' => $key,
+                ':label' => $label,
+                ':now' => date('Y-m-d G:i:s', time())
+                ))) {
+                    
+                $myreturn = true;
+            }
+        } else {
+            // look for unit properties
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT * FROM units
+                    WHERE units.id =:id and units.workspace_id=:ws');
+        
+            if ($sql -> execute(array(
+                ':ws' => $workspaceId,
+                ':id' => $sourceUnit))) {
+
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $sql = $this->pdoDBhandle->prepare(
+                        'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) 
+                            VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)');
+                        
+                    if ($sql -> execute(array(
+                        ':workspace' => $workspaceId,
+                        ':key' => $key,
+                        ':label' => $label,
+                        ':now' => date('Y-m-d G:i:s', time()),
+                        ':description' => $data['description'],
+                        ':def' => $data['def'],
+                        ':atId' => $data['authoringtool_id'],
+                        ':pId' => $data['player_id'],
+                        ':defref' => $data['defref']
+                        ))) {
+                            
+                        $myreturn = true;
+                    }
+                }
+            }
+
         }
             
         return $myreturn;

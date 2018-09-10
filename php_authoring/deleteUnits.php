@@ -9,7 +9,7 @@
 		exit();
 	} else {
 
-		require_once('../itemdb_code/DBConnectionAuthoring.php');
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
 		// Authorisation
 		$myerrorcode = 503;

@@ -8,7 +8,7 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../itemdb_code/DBConnectionAuthoring.php');
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
 		// *****************************************************************
 
@@ -26,9 +26,13 @@
 			if (isset($myToken)) {
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
+					$mySourceUnit = $data["u"];
+					if (!isset($mySourceUnit)) {
+						$mySourceUnit = 0;
+					}
 					$myKey = $data["k"];
 					$myLabel = $data["l"];
-					$myreturn = $myDBConnection->addUnit($myWorkspace, $myKey, $myLabel);
+					$myreturn = $myDBConnection->addUnit($myWorkspace, $myKey, $myLabel, $mySourceUnit);
 				}
 			}
 		}        

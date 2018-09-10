@@ -9,7 +9,7 @@
 		exit();
 	} else {
 
-		require_once('../itemdb_code/DBConnection.php');
+		require_once('../vo_code/DBConnection.php');
 
 		// Authorisation
 		$myerrorcode = 503;
@@ -27,7 +27,7 @@
 			if (isset($myToken)) {
 				if ($myDBConnection->isSuperAdmin($myToken)) {
 					$myerrorcode = 0;
-					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+					require_once('../vo_code/ItemAuthoringToolsFactory.php');
 					$myreturn = ItemAuthoringToolsFactory::renameItemAuthoringTool($authoringIdOld, $authoringIdNew, $authoringName);
 				}
 			}

@@ -7,6 +7,20 @@
 require_once('DBConnection.php');
 
 class DBConnectionSuperAdmin extends DBConnection {
+    private static $_tempfilepath = '../vo_tmp';
+
+    public function getTempFilePath() {
+        $myreturn = '';
+        $myfolder = DBConnectionSuperAdmin::$_tempfilepath;
+        if (file_exists($myfolder)) {
+            $myreturn = $myfolder;
+        } else {
+            if (mkdir($myfolder)) {
+                $myreturn = $myfolder;
+            }
+        }
+        return $myreturn;
+    }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns all workspaces if the user associated with the given token is superadmin

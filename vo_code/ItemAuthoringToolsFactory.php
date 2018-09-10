@@ -200,8 +200,19 @@ class ItemAuthoringToolsFactory {
             if (file_exists($itemAuthoringToolFolder)) {
                 $files = glob($itemAuthoringToolFolder . '/*', GLOB_MARK);
                 foreach ($files as $file) {
-                    if (!is_dir($file)) {
+                    if (is_file($file)) {
                         unlink($file);
+                    } elseif (is_dir($file)) {
+                        if (substr($file, -2) !== '/.' && substr($file, -3) !== '/..') {
+                            $mysubdir = opendir($file);
+                            while (($subentry = readdir($mysubdir)) !== false) {
+                                $fullsubfilename = $file . '/' . $subentry;
+                                if (is_file($fullsubfilename)) {
+                                    unlink($fullsubfilename);
+                                }
+                            }
+                            rmdir($file);
+                        }
                     }
                 }
                 rmdir($itemAuthoringToolFolder);
@@ -219,18 +230,37 @@ class ItemAuthoringToolsFactory {
             if (file_exists($itemAuthoringToolFolder)) {
                 $mydir = opendir($itemAuthoringToolFolder);
                 while (($entry = readdir($mydir)) !== false) {
-                    $fullfilename = $itemAuthoringToolFolder . '/' . $entry;
-                    if (is_file($fullfilename)) {
-                        $rs = new ResourceFile($entry, filemtime($fullfilename), filesize($fullfilename));
-        
-                        array_push($myreturn, [
-                            'filename' => $rs->getFileName(),
-                            'filesize' => $rs->getFileSize(),
-                            'filesizestr' => $rs->getFileSizeString(),
-                            'filedatetime' => $rs->getFileDateTime(),
-                            'filedatetimestr' => $rs->getFileDateTimeString(),
-                            'selected' => false
-                        ]);
+                    if ($entry !== '.' && $entry !== '..') {
+                        $fullfilename = $itemAuthoringToolFolder . '/' . $entry;
+                        if (is_file($fullfilename)) {
+                            $rs = new ResourceFile($entry, filemtime($fullfilename), filesize($fullfilename));
+            
+                            array_push($myreturn, [
+                                'filename' => $rs->getFileName(),
+                                'filesize' => $rs->getFileSize(),
+                                'filesizestr' => $rs->getFileSizeString(),
+                                'filedatetime' => $rs->getFileDateTime(),
+                                'filedatetimestr' => $rs->getFileDateTimeString(),
+                                'selected' => false
+                            ]);
+                        } elseif (is_dir($fullfilename)) {
+                            $mysubdir = opendir($fullfilename);
+                            while (($subentry = readdir($mysubdir)) !== false) {
+                                $fullsubfilename = $fullfilename . '/' . $subentry;
+                                if (is_file($fullsubfilename)) {
+                                    $rs = new ResourceFile($entry . '/' . $subentry, filemtime($fullsubfilename), filesize($fullsubfilename));
+                    
+                                    array_push($myreturn, [
+                                        'filename' => $rs->getFileName(),
+                                        'filesize' => $rs->getFileSize(),
+                                        'filesizestr' => $rs->getFileSizeString(),
+                                        'filedatetime' => $rs->getFileDateTime(),
+                                        'filedatetimestr' => $rs->getFileDateTimeString(),
+                                        'selected' => false
+                                    ]);
+                                }
+                            }
+                        }
                     }
                 }
             }

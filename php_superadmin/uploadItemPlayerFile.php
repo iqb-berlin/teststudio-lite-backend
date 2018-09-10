@@ -9,7 +9,7 @@
 		exit();
 	} else {
 
-		require_once('../itemdb_code/DBConnectionSuperadmin.php');
+		require_once('../vo_code/DBConnectionSuperadmin.php');
 
 		// *****************************************************************
 
@@ -26,7 +26,7 @@
 				$myerrorcode = 401;
 
 				if ($myDBConnection->isSuperAdmin($myToken)) {
-					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+					require_once('../vo_code/ItemAuthoringToolsFactory.php');
 					$targetFolder = ItemAuthoringToolsFactory::getItemPlayerFolder();
 
 					if (strlen($targetFolder) > 0) {
@@ -36,7 +36,7 @@
 						$originalTargetFilename = $_FILES['itemplayerfile']['name'];
 						if (isset($originalTargetFilename) and strlen($originalTargetFilename) > 0) {
 							$originalTargetFilename = basename($originalTargetFilename);
-							$tempPrefix = '../itemdb_data/' . uniqid('at_', true) . '_';
+							$tempPrefix = DBConnectionSuperAdmin::getTempFilePath() . '/' . uniqid('at_', true) . '_';
 							$tempFilename = $tempPrefix . $originalTargetFilename;
 
 							// +++++++++++++++++++++++++++++++++++++++++++++++++++++++

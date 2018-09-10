@@ -13,7 +13,7 @@
 
 		$myreturn = [];
 
-		require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+		require_once('../vo_code/ItemAuthoringToolsFactory.php');
 		$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList(true);
 
 		echo(json_encode($myreturn));

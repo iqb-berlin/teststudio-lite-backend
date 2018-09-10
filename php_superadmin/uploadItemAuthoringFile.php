@@ -9,7 +9,7 @@
 		exit();
 	} else {
 
-		require_once('../itemdb_code/DBConnectionSuperadmin.php');
+		require_once('../vo_code/DBConnectionSuperadmin.php');
 
 		// *****************************************************************
 
@@ -27,7 +27,7 @@
 				$myerrorcode = 401;
 
 				if ($myDBConnection->isSuperAdmin($myToken)) {
-					require_once('../itemdb_code/ItemAuthoringToolsFactory.php');
+					require_once('../vo_code/ItemAuthoringToolsFactory.php');
 					$targetFolder = ItemAuthoringToolsFactory::getItemAuthoringFolder($authoringId);
 
 					if (strlen($targetFolder) > 0) {
@@ -37,23 +37,36 @@
 						$originalTargetFilename = $_FILES['authoringtoolfile']['name'];
 						if (isset($originalTargetFilename) and strlen($originalTargetFilename) > 0) {
 							$originalTargetFilename = basename($originalTargetFilename);
-							$tempPrefix = '../itemdb_data/' . uniqid('at_', true) . '_';
+							$tempPrefix = DBConnectionSuperAdmin::getTempFilePath() . '/' . uniqid('at_', true) . '_';
 							$tempFilename = $tempPrefix . $originalTargetFilename;
 
 							// +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 							// move file from php-server-tmp folder to tmp-folder
 							if (move_uploaded_file($_FILES['authoringtoolfile']['tmp_name'], $tempFilename)) {
-								$targetFilename = $targetFolder . '/' . $originalTargetFilename;
 								$myreturn = 'OK';
-								if (file_exists($targetFilename)) {
-									if (!unlink($targetFilename)) {
-										$myreturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
-										$targetFilename = '';
+
+								$filenameextension = strtoupper(substr($originalTargetFilename, -4));
+								if ($filenameextension === '.ZIP') {
+									$zip = new ZipArchive;
+									if ($zip->open($tempFilename) === TRUE) {
+										$zip->extractTo($targetFolder . '/');
+										$zip->close();
+										unlink($tempFilename);
+									} else {
+										$myreturn = 'e:Interner Fehler: Konnte ZIP-Datei nicht entpacken.';
 									}
-								}
-								if (strlen($targetFilename) > 0) {
-									if (!rename($tempFilename, $targetFilename)) {
-										$myreturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben.';
+								} else {
+									$targetFilename = $targetFolder . '/' . $originalTargetFilename;
+									if (file_exists($targetFilename)) {
+										if (!unlink($targetFilename)) {
+											$myreturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
+											$targetFilename = '';
+										}
+									}
+									if (strlen($targetFilename) > 0) {
+										if (!rename($tempFilename, $targetFilename)) {
+											$myreturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben.';
+										}
 									}
 								}
 							} else {

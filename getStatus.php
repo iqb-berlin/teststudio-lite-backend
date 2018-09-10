@@ -19,7 +19,7 @@
 		$myToken = $data["t"];
 
 		if (isset($myToken)) {
-			require_once('itemdb_code/DBConnection.php');
+			require_once('vo_code/DBConnection.php');
 
 			$myDBConnection = new DBConnection();
 			if (!$myDBConnection->isError()) {
