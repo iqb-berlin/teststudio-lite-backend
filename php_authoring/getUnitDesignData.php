@@ -31,7 +31,6 @@
 
 					require_once('../vo_code/ItemAuthoringToolsFactory.php');
 					$myreturn['authoringtoolLink'] = ItemAuthoringToolsFactory::getItemAuthoringToolLinkById($myreturn['authoringtool_id']);
-					$myreturn['guid'] = uniqid('t', true);
 				}
 			}
 		}        
