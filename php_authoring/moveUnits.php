@@ -25,7 +25,7 @@
 			if (isset($myToken)) {
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
-					$myreturn = $myDBConnection->deleteUnits($myWorkspace, $data["u"]);
+					$myreturn = $myDBConnection->moveUnits($myWorkspace, $data["u"], $data["tws"]);
 				}
 			}
 		}

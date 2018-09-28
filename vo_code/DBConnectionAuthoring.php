@@ -127,6 +127,66 @@ class DBConnectionAuthoring extends DBConnection {
         return $myreturn;
     }
 
+    public function moveUnits($workspaceId, $unitIds, $targetWorkspace) {
+        $myreturn = false;
+        $update_count = 0;
+        foreach($unitIds as $uid) {
+            $sql_update = $this->pdoDBhandle->prepare(
+                'UPDATE units
+                    SET workspace_id =:ws
+                    WHERE id =:id');
+    
+            if ($sql_update != false) {
+                if ($sql_update->execute(array(
+                    ':ws' => $targetWorkspace,
+                    ':id' => $uid))) {
+                        $update_count += 1;
+                }
+            }
+        }
+           
+        return $update_count === count($unitIds);
+    }
+
+    // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
+    // with extension '.voud'
+    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip) {
+        $myreturn = false;
+        if (($this->pdoDBhandle != false) and ($wsId > 0)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT units.key, units.label, units.def, units.player_id FROM units
+                    WHERE units.id =:id and units.workspace_id=:ws');
+        
+            if ($sql -> execute(array(
+                ':ws' => $wsId,
+                ':id' => $unitId))) {
+
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $xRootElement = new SimpleXMLElement('<Unit/>');
+                    $xMetadataElement = $xRootElement->addChild('Metadata');
+                    $xMetadataElement->addChild('Id', $data['key']);
+                    $xMetadataElement->addChild('Label', $data['label']);
+                    if (strlen($data['def']) > 1000) {
+                        $xDefElement = $xRootElement->addChild('DefinitionRef', $data['key'] . '.voud');
+                        $xDefElement->addAttribute('type', $data['player_id']);
+                        $targetZip->addFromString($data['key'] . '.voud', $data['def']);
+                    } else {
+                        $xDefElement = $xRootElement->addChild('Definition', $data['def']);
+                        $xDefElement->addAttribute('type', $data['player_id']);
+                    }
+                    
+                    $xfile = dom_import_simplexml($xRootElement)->ownerDocument;
+                    $xfile->formatOutput = true;
+                    $targetZip->addFromString($data['key'] . '.xml', $xfile->saveXML());
+                    $myreturn = true;
+                }
+            }
+        }
+
+        return $myreturn;
+    }
+
     public function getUnitProperties($wsId, $unitId) {
         $myreturn = [];
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
