@@ -30,6 +30,7 @@
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
 					$okCount = 0;
+					$wsName = $myDBConnection->getWorkspaceName($myWorkspace);
 					// $targetfolder = ;
 					// if (!file_exists($targetfolder)) {
 					// if (mkdir($targetfolder)) {
@@ -38,7 +39,7 @@
 					$targetFileName = '../vo_tmp/' . uniqid('unitexport_', true) . '.voud.zip';
 					$targetZip->open($targetFileName, ZipArchive::CREATE);
 					foreach($data->u as $unitId) {
-						if ($myDBConnection->writeUnitDefToZipFile($myWorkspace, $unitId, $targetZip)) {
+						if ($myDBConnection->writeUnitDefToZipFile($myWorkspace, $unitId, $targetZip, $wsName)) {
 							$okCount = $okCount + 1;
 						}
 					}

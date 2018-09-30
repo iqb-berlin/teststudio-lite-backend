@@ -56,6 +56,31 @@ class DBConnectionAuthoring extends DBConnection {
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+    // returns the name of the workspace given by id
+    // returns '' if not found
+    // token is not refreshed
+    public function getWorkspaceName($workspace_id) {
+        $myreturn = '';
+        if ($this->pdoDBhandle != false) {
+
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT workspaces.name FROM workspaces
+                    WHERE workspaces.id=:workspace_id');
+                
+            if ($sql -> execute(array(
+                ':workspace_id' => $workspace_id))) {
+                    
+                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data['name'];
+                }
+            }
+        }
+            
+        return $myreturn;
+    }
+
+    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // adds new user if no user with the given name exists
     // returns true if ok, false if admin-token not valid or user already exists
     // token is refreshed via isSuperAdmin
@@ -150,11 +175,11 @@ class DBConnectionAuthoring extends DBConnection {
 
     // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
     // with extension '.voud'
-    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip) {
+    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip, $wsName) {
         $myreturn = false;
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT units.key, units.label, units.def, units.player_id FROM units
+                'SELECT units.key, units.label, units.def, units.player_id, units.lastchanged FROM units
                     WHERE units.id =:id and units.workspace_id=:ws');
         
             if ($sql -> execute(array(
@@ -167,6 +192,11 @@ class DBConnectionAuthoring extends DBConnection {
                     $xMetadataElement = $xRootElement->addChild('Metadata');
                     $xMetadataElement->addChild('Id', $data['key']);
                     $xMetadataElement->addChild('Label', $data['label']);
+                    setlocale(LC_TIME, "de_DE");
+                    $xMetadataElement->addChild('Lastchange', date(DateTime::RFC3339, strtotime($data['lastchanged'])));
+                    $xMetadataElement->addChild('Owner', 'Institut zur Qualitätsentwicklung im Bildungswesen IQB');
+                    $xMetadataElement->addChild('Project', $wsName);
+                    
                     if (strlen($data['def']) > 1000) {
                         $xDefElement = $xRootElement->addChild('DefinitionRef', $data['key'] . '.voud');
                         $xDefElement->addAttribute('type', $data['player_id']);
