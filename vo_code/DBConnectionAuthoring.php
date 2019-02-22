@@ -222,7 +222,8 @@ class DBConnectionAuthoring extends DBConnection {
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT units.id, units.key, units.label, units.description, 
-                    units.lastchanged, units.authoringtool_id as authoringtoolId FROM units
+                    units.lastchanged, units.authoringtool_id as authoringtoolId,
+                    units.player_id as playerId FROM units
                     WHERE units.id =:id and units.workspace_id=:ws');
         
             if ($sql -> execute(array(
