@@ -199,11 +199,11 @@ class DBConnectionAuthoring extends DBConnection {
                     
                     if (strlen($data['def']) > 1000) {
                         $xDefElement = $xRootElement->addChild('DefinitionRef', $data['key'] . '.voud');
-                        $xDefElement->addAttribute('type', $data['player_id']);
+                        $xDefElement->addAttribute('player', $data['player_id']);
                         $targetZip->addFromString($data['key'] . '.voud', $data['def']);
                     } else {
                         $xDefElement = $xRootElement->addChild('Definition', $data['def']);
-                        $xDefElement->addAttribute('type', $data['player_id']);
+                        $xDefElement->addAttribute('player', $data['player_id']);
                     }
                     
                     $xfile = dom_import_simplexml($xRootElement)->ownerDocument;
@@ -343,13 +343,14 @@ class DBConnectionAuthoring extends DBConnection {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET authoringtool_id =:at, lastchanged=:now
+                SET authoringtool_id =:at, player_id=:pl, lastchanged=:now
                 WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
                 ':id' => $myId,
                 ':at' => $myTool,
+                ':pl' => '',
                 ':now' => date('Y-m-d G:i:s', time())
             ));
         }

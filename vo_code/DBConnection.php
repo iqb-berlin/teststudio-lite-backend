@@ -6,14 +6,21 @@
 
 class DBConnection {
     protected $pdoDBhandle = false;
-    public $errorMsg = ''; // only used by new (contruct)
+    public $errorMsg = ''; // only used by new (construct)
     private $idletime = 60 * 60; // time the usertoken gets invalid
 
     // __________________________
     public function __construct() {
         try {
-            $this->pdoDBhandle = new PDO("pgsql:host=xx;port=5432;dbname=xx;user=xxx;password=xx");
+            $cData = json_decode(file_get_contents(__DIR__ . '/DBConnectionData.json'));
+            if ($cData->type === 'mysql') {
+                $this->pdoDBhandle = new PDO("mysql:host=" . $cData->host . ";port=" . $cData->port . ";dbname=" . $cData->dbname, $cData->user, $cData->password);
+            } elseif ($cData->type === 'pgsql') {
+                $this->pdoDBhandle = new PDO("pgsql:host=" . $cData->host . ";port=" . $cData->port . ";dbname=" . $cData->dbname . ";user=" . $cData->user . ";password=" . $cData->password);
+            }
+
             $this->pdoDBhandle->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
         } catch(PDOException $e) {
             $this->errorMsg = $e->getMessage();
             $this->pdoDBhandle = false;
