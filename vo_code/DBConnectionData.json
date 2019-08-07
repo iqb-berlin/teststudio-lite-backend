@@ -1,8 +1,8 @@
 {
-    "type": "mysql",
-    "host": "dbsuper.center.de",
-    "port": "2554",
-    "dbname": "testcenter",
-    "user": "name",
-    "password": "verysecret"
+    "type": "pgsql",
+    "host": "localhost",
+    "port": "5432",
+    "dbname": "veraonline_itemdb",
+    "user": "root",
+    "password": "psqllocal"
 }
