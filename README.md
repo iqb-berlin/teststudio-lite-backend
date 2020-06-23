@@ -1,31 +1,29 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-# IQB Testcenter Backend
+# Teststudio-Lite Backend
 
-Thes is the backend for the application:
-- iqb item-db-lite
+Thes is the backend for the Teststudio-Lite application (formally known as itemdb).
 
+You can find the frontend for this application here *TODO*
 
-You can find frontends for those applications *TODO*
-
-# Documentation
+## Documentation
 
 Find API documentation [here](https://iqb-berlin.github.io/testcenter-iqb-php/).
 
-# Bug Reports
+## Bug Reports
 
 *TODO*
 
-# Installation
+## Installation
 
-## With Docker (recommended)
+### With Docker (recommended)
 
 You can find Docker files and a complete setup [here](TODO). 
 
 
-## With Installation Script on Webserver
+### With Installation Script on Webserver
 
-### Prerequisites
+#### Prerequisites
 
 * Apache2 (other webservers possible, but untested) with
   * mod_rewrite extension
@@ -34,7 +32,7 @@ You can find Docker files and a complete setup [here](TODO).
     *TODO*
     
     
-### Installation Steps
+#### Installation Steps
 
 - Clone this repository:
 ```
@@ -43,6 +41,6 @@ git clone https://github.com/iqb-berlin/testcenter-iqb-php.git
 
 *TODO*
 
-# Development
+## Development
 
 This project is not under active development anymore. Only critical bugfixes will be done.
