@@ -12,7 +12,7 @@ You can find the frontend for this application [here](https://github.com/iqb-ber
 
 ## Bug Reports
 
-*TODO*
+https://github.com/iqb-berlin/teststudio-lite-backend/issues
 
 ## Installation
 
