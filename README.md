@@ -4,11 +4,11 @@
 
 Thes is the backend for the Teststudio-Lite application (formally known as itemdb).
 
-You can find the frontend for this application here *TODO*
+You can find the frontend for this application [here](https://github.com/iqb-berlin/teststudio-lite-frontend).
 
 ## Documentation
 
-Find API documentation [here](https://iqb-berlin.github.io/testcenter-iqb-php/).
+*TODO*
 
 ## Bug Reports
 
@@ -18,7 +18,7 @@ Find API documentation [here](https://iqb-berlin.github.io/testcenter-iqb-php/).
 
 ### With Docker (recommended)
 
-You can find Docker files and a complete setup [here](TODO). 
+You can find Docker files and a complete setup [here](https://github.com/iqb-berlin/testcenter-setup). 
 
 
 ### With Installation Script on Webserver
