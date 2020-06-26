@@ -52,12 +52,31 @@ if ($myDBConnection->isError()) {
 
 $arguments = getopt("", [
     'user_name:',
-    'user_password:'
+    'user_password:',
+    'workspace_name::'
 ]);
 
 if (isset($arguments['user_name']) && isset($arguments['user_password'])) {
 
     echo $myDBConnection->addSuperuser($arguments['user_name'], $arguments['user_password']);
+
+    if (isset($arguments['workspace_name'])) {
+
+        $workspaceAdded = $myDBConnection->addWorkspace($arguments['workspace_name']);
+
+        if ($workspaceAdded === false) {
+            echo "Fehler beim Anlegen des Workspaces.\n";
+            exit(1);
+        }
+
+        if (!$myDBConnection->setWorkspaceRights($arguments['workspace_name'], $arguments['user_name'])) {
+            echo "Fehler beim Rechtevergeben für den Workspace.\n";
+            exit(1);
+        }
+
+        echo $workspaceAdded;
+    }
+
     exit(0);
 
 } else {
