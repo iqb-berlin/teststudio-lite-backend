@@ -9,7 +9,7 @@ require_once('DBConnection.php');
 class DBConnectionSuperAdmin extends DBConnection {
     private static $_tempfilepath = '../vo_tmp';
 
-    public function getTempFilePath() {
+    public static function getTempFilePath() {
         $myreturn = '';
         $myfolder = DBConnectionSuperAdmin::$_tempfilepath;
         if (file_exists($myfolder)) {
