@@ -12,3 +12,6 @@ down:
 
 build:
 	cd docker && docker-compose build
+
+docker-release:
+	docker/scripts/release.sh
