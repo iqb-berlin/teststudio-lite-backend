@@ -1,0 +1,49 @@
+version: '3.7'
+
+x-env-postgres: &env-postgres
+  POSTGRES_DB: teststudio_lite_db
+  POSTGRES_USER: teststudio_lite_db_user
+  POSTGRES_PASSWORD: iqb_tba_db_password_1
+
+x-env-initdata: &env-initdata
+  SUPERUSER_NAME: super
+  SUPERUSER_PASSWORD: user123
+  WORKSPACE_NAME: sample_workspace
+
+
+services:
+  teststudio-lite-db:
+    image: postgres:9.6
+    container_name: teststudio-lite-db-postgres
+    environment:
+      <<: *env-postgres
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./config/sql/:/docker-entrypoint-initdb.d/
+    ports:
+      - "9097:5432"
+
+
+  teststudio-lite-backend:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: teststudio-lite-backend
+    environment:
+      <<: *env-postgres
+      <<: *env-initdata
+      POSTGRES_HOST: teststudio-lite-db
+      POSTGRES_PORT: 5432
+    depends_on:
+      - teststudio-lite-db
+    volumes:
+      - ../:/var/www/html/
+      - ./example_players:/var/www/html/itemplayers
+      - ./example_editors:/var/www/html/itemauthoringtools
+    ports:
+      - "9095:80"
+    stdin_open: true
+    tty: true
+
+volumes:
+  dbdata:
