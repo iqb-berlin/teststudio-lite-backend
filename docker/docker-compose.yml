@@ -10,38 +10,36 @@ x-env-initdata: &env-initdata
   SUPERUSER_PASSWORD: user123
   WORKSPACE_NAME: sample_workspace
 
-
 services:
-  teststudio-lite-db:
+  teststudio-lite-db-dev:
     image: postgres:9.6
-    container_name: teststudio-lite-db-postgres
+    container_name: teststudio-lite-db-dev
     environment:
       <<: *env-postgres
     volumes:
       - dbdata:/var/lib/postgresql/data
       - ./config/sql/:/docker-entrypoint-initdb.d/
     ports:
-      - "9097:5432"
+      - "5434:5432"
 
-
-  teststudio-lite-backend:
+  teststudio-lite-backend-dev:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: teststudio-lite-backend
+    container_name: teststudio-lite-backend-dev
     environment:
       <<: *env-postgres
       <<: *env-initdata
-      POSTGRES_HOST: teststudio-lite-db
+      POSTGRES_HOST: teststudio-lite-db-dev
       POSTGRES_PORT: 5432
     depends_on:
-      - teststudio-lite-db
+      - teststudio-lite-db-dev
     volumes:
       - ../:/var/www/html/
-      - ./example_players:/var/www/html/itemplayers
-      - ./example_editors:/var/www/html/itemauthoringtools
+      - ../example_players:/var/www/html/itemplayers
+      - ../example_editors:/var/www/html/itemauthoringtools
     ports:
-      - "9095:80"
+      - "8081:80"
     stdin_open: true
     tty: true
 
