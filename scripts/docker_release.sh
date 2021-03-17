@@ -1,19 +1,15 @@
+#!/bin/bash
+
 set -e
 
 docker build -t iqbberlin/teststudio-lite-backend:latest -f docker/Dockerfile .
 docker push iqbberlin/teststudio-lite-backend:latest;
 
-# any parameter causes a tagged version to be released
-# TODO create version file and implment parse logic
-# if [ $# -gt 0 ]
-# then
-#   PACKAGE_VERSION=$(cat package.json \
-#   | grep version \
-#   | head -1 \
-#   | awk -F: '{ print $2 }' \
-#   | sed 's/[",]//g')
-#
-#   echo "Releasing Tagged image $PACKAGE_VERSION"
-#   docker tag iqbberlin/teststudio-lite-backend:latest iqbberlin/teststudio-lite-backend:$PACKAGE_VERSION;
-#   docker push iqbberlin/teststudio-lite-backend:$PACKAGE_VERSION;
-# fi
+if [[ $1 == "-t" ]] && [[ $2 != "" ]]
+  then
+    echo "Releasing Tagged image $2"
+    docker tag iqbberlin/teststudio-lite-backend:latest iqbberlin/teststudio-lite-backend:$2;
+    docker push iqbberlin/teststudio-lite-backend:$2;
+  else
+    echo "No tag paramater"
+fi

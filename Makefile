@@ -13,8 +13,11 @@ down:
 build:
 	cd docker && docker-compose build
 
-docker-release:
-	docker/scripts/release.sh
+new-version-major:
+	scripts/new_version.py major
 
-docker-release-tagged:
-	docker/scripts/release.sh -t
+new-version-minor:
+	scripts/new_version.py minor
+
+new-version-patch:
+	scripts/new_version.py patch
