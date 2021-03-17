@@ -3,6 +3,8 @@ set -e
 docker build -t iqbberlin/teststudio-lite-backend:latest -f docker/Dockerfile .
 docker push iqbberlin/teststudio-lite-backend:latest;
 
+# any parameter causes a tagged version to be released
+# TODO create version file and implment parse logic
 # if [ $# -gt 0 ]
 # then
 #   PACKAGE_VERSION=$(cat package.json \

@@ -15,3 +15,6 @@ build:
 
 docker-release:
 	docker/scripts/release.sh
+
+docker-release-tagged:
+	docker/scripts/release.sh -t
