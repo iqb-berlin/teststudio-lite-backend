@@ -1,10 +1,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/iqb-berlin/teststudio-lite-backend?style=flat-square)
 
 # Teststudio-Lite Backend
 
-This is the backend for the Teststudio-Lite application (formally known as itemdb).
+This is the backend for the Teststudio-Lite application (formally known as itemdb).\
+This project is not under active development currently. Only critical bugfixes will be done.
 
 You can find the frontend for this application [here](https://github.com/iqb-berlin/teststudio-lite-frontend).
+
+You can find a complete setup with front- and backend [here](https://github.com/iqb-berlin/teststudio-lite-setup).
 
 ## Bug Reports
 
@@ -12,13 +16,23 @@ Please file bug reports etc. here [here](https://github.com/iqb-berlin/teststudi
 
 ## Installation
 
-**Warning this application is not in active development currently and therefore employs outdated dependencies. 
-We take not any warranties and don't recommend putting your instance on a publicly reachable server.** 
-
 ### With Docker (recommended)
 
-You can find Docker files for a complete setup [here](https://github.com/iqb-berlin/testcenter-setup). 
+All necessary commands for running the application can be found in the Makefile on the root directory. It is recommended to use those Makefile-targets. If you don't want to use `make`, you may manually execute the commands in this file.
 
+A production-ready container can be downloaded [here](https://hub.docker.com/repository/docker/iqbberlin/teststudio-lite-backend).
+
+###### Start and Stop the server
+This setup is for local development. You can build and start the image(s) with the following commands.
+```
+make run
+make stop
+```
+
+To run docker in the background you may use
+```
+make run-detached
+```
 
 ### With Installation Script on Webserver
 
@@ -32,19 +46,15 @@ You can find Docker files for a complete setup [here](https://github.com/iqb-ber
 
 #### Installation Steps
 
-*This assumes apache2 as server with a common setup. Maybe you have to adjust paths etc. 
+*This assumes apache2 as server with a common setup. Maybe you have to adjust paths etc.
 to your server's specific setup.*
 
 - Clone this repository:
-```
-git clone https://github.com/iqb-berlin/testcenter-iqb-php.git
-cd testcenter-iqb-php.git
-```
 
-- Make sure, Apache2 accepts .htacess-files (AllowOverride All-setting in your Vhost-config) and required 
+- Make sure, Apache2 accepts .htacess-files (AllowOverride All-setting in your Vhost-config) and required
 extensions are present.
 
-- Make sure, config and data files are not exposed to the outside*. If the .htacess-files is accepted by Apache2 
+- Make sure, config and data files are not exposed to the outside*. If the .htacess-files is accepted by Apache2
 correctly this would be the case.
 
 - create data and tmp directories:
@@ -69,19 +79,21 @@ psql -U {db_user_name} {database_name} < create/postgresql.sql
 
 - Open `vo_code/DBConnectionData.json` and put in your PostgreSQL-credentials.
 
-- Run init-script to create first super-user and workspace (replace `{user_name}`, `user_password}` 
+- Run init-script to create first super-user and workspace (replace `{user_name}`, `user_password}`
 and `{workspace_name}` by whatever you want as credentials.)
 ```
 cd create
 php init.cli.php --user_name={user_name} --user_password={user_password} --workspace_name={workspace_name}
 ```
 
-- You still need the [frontend](https://github.com/iqb-berlin/teststudio-lite-frontend) and 
-some [unit-players and -editors](https://github.com/iqb-berlin/verona-player-dan) to get 
+- You still need the [frontend](https://github.com/iqb-berlin/teststudio-lite-frontend) and
+some [unit-players and -editors](https://github.com/iqb-berlin/verona-player-dan) to get
 started. You can import them with the frontend.
 
 
 ## Development
 
-This project is not under active development currently. Only critical bugfixes will be done.
-.
+To create a new tag in git and tagged docker images on Docker Hub, you the Makefile targets:
+```
+new-version-major/minor/patch
+```
