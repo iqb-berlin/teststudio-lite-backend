@@ -40,6 +40,12 @@ RUN mkdir -p /var/www/html/itemplayers
 RUN mkdir -p /var/www/html/itemauthoringtools
 RUN mkdir -p /var/www/html/vo_tmp
 
+# embed default players
+COPY ./example_players /var/www/html/itemplayers
+
+# embed default item authoring tools
+COPY ./example_editors /var/www/html/itemauthoringtools
+
 # set file rights
 RUN chown -R www-data:www-data /var/www/html
 
