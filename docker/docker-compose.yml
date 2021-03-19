@@ -36,6 +36,7 @@ services:
       - teststudio-lite-db-dev
     volumes:
       - ../:/var/www/html/
+      - vo_tmp:/var/www/html/vo_tmp
       - itemplayers:/var/www/html/itemplayers
       - itemauthoringtools:/var/www/html/itemauthoringtools
     ports:
@@ -45,5 +46,6 @@ services:
 
 volumes:
   dbdata:
+  vo_tmp:
   itemplayers:
   itemauthoringtools:
