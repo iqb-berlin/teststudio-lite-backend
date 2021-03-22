@@ -7,7 +7,15 @@ DataSource=/var/www/html/vo_code/DataSource.json
 if [[ ! -f "$DataSource" ]]; then
   echo "create new data source"
   touch $DataSource
-  echo -e "{\n\t\"type\": \"pgsql\",\n\t\"host\": \"${POSTGRES_HOST}\",\n\t\"port\": \"${POSTGRES_PORT}\",\n\t\"dbname\": \"${POSTGRES_DB}\",\n\t\"user\": \"${POSTGRES_USER}\",\n\t\"password\": \"${POSTGRES_PASSWORD}\"\n}" > $DataSource
+  echo -e "
+{
+  \"type\": \"pgsql\",
+  \"host\": \"${POSTGRES_HOST}\",
+  \"port\": \"${POSTGRES_PORT}\",
+  \"dbname\": \"${POSTGRES_DB}\",
+  \"user\": \"${POSTGRES_USER}\",
+  \"password\": \"${POSTGRES_PASSWORD}\"
+}" > $DataSource
 
 ## customize existing Data Source Configuration File
 else
