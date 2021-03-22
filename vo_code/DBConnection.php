@@ -12,7 +12,7 @@ class DBConnection {
     // __________________________
     public function __construct() {
         try {
-            $cData = json_decode(file_get_contents(__DIR__ . '/DBConnectionData.json'));
+            $cData = json_decode(file_get_contents(__DIR__ . '/DataSource.json'));
             if ($cData->type === 'mysql') {
                 $this->pdoDBhandle = new PDO("mysql:host=" . $cData->host . ";port=" . $cData->port . ";dbname=" . $cData->dbname, $cData->user, $cData->password);
             } elseif ($cData->type === 'pgsql') {
@@ -24,6 +24,7 @@ class DBConnection {
         } catch(PDOException $e) {
             $this->errorMsg = $e->getMessage();
             $this->pdoDBhandle = false;
+            error_log($this->errorMsg);
         }
     }
 
@@ -71,7 +72,6 @@ class DBConnection {
             $sql_select = $this->pdoDBhandle->prepare(
                 'SELECT * FROM users
                     WHERE users.name = :name AND users.password = :password');
-                
             if ($sql_select->execute(array(
                 ':name' => $username, 
                 ':password' => $this->encryptPassword($password)))) {

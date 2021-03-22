@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 x-env-postgres: &env-postgres
   POSTGRES_DB: teststudio_lite_db
@@ -16,6 +16,7 @@ services:
     container_name: teststudio-lite-db-dev
     environment:
       <<: *env-postgres
+      <<: *env-initdata
     volumes:
       - dbdata:/var/lib/postgresql/data
       - ./config/sql/:/docker-entrypoint-initdb.d/
@@ -29,7 +30,6 @@ services:
     container_name: teststudio-lite-backend-dev
     environment:
       <<: *env-postgres
-      <<: *env-initdata
       POSTGRES_HOST: teststudio-lite-db-dev
       POSTGRES_PORT: 5432
     depends_on:

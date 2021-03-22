@@ -1,8 +1,0 @@
-{
-    "type": "pgsql",
-    "host": "localhost",
-    "port": "5432",
-    "dbname": "veraonline_itemdb",
-    "user": "root",
-    "password": "psqllocal"
-}
