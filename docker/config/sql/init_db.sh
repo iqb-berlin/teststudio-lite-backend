@@ -75,7 +75,16 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   );
 
   -- default data
-  INSERT INTO public.users (id, name, password, is_superadmin) VALUES (1, '$SUPERUSER_NAME' , encode(digest('t$SUPERUSER_PASSWORD', 'sha1'), 'hex'), 'True');
-  INSERT INTO public.workspaces (id, name) VALUES (1, '$WORKSPACE_NAME');
-  INSERT INTO workspace_users (workspace_id, user_id) VALUES(1, 1);
+  INSERT INTO public.users (name, password, is_superadmin)
+    VALUES ('$SUPERUSER_NAME' , encode(digest('t$SUPERUSER_PASSWORD', 'sha1'), 'hex'), 'True');
+
+  INSERT INTO public.workspaces (name)
+    VALUES ('$WORKSPACE_NAME');
+
+  INSERT INTO workspace_users (workspace_id, user_id)
+    VALUES(
+      (SELECT id FROM public.users WHERE name = '$SUPERUSER_NAME'),
+      (SELECT id FROM public.workspaces WHERE name = '$WORKSPACE_NAME')
+      );
+
 EOSQL
