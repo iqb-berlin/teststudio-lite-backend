@@ -30,7 +30,7 @@
 					$myreturn = $myDBConnection->getUnitProperties($myWorkspace, $myUnitId);
 				}
 			}
-		}        
+		}
 		unset($myDBConnection);
 
 		if ($myerrorcode > 0) {

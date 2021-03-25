@@ -6,8 +6,46 @@
 
 require_once('DBConnection.php');
 
-class DBConnectionAuthoring extends DBConnection
-{
+class DBConnectionAuthoring extends DBConnection {
+    private function fetchUnitById($unitId)
+    {
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT * FROM units WHERE id = :id'
+        );
+
+        $stmt->bindParam(':id', $unitId);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function fetchUnitKeyById($unitId)
+    {
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT key FROM units WHERE id = :id'
+        );
+        $stmt->bindParam(':id', $unitId);
+        $stmt->execute();
+
+        return $stmt->fetchColumn();
+    }
+    
+    private function checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)
+    {
+        $key = strtolower(trim($unitKey));
+
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT count(*) FROM units WHERE workspace_id = :ws_id AND LOWER(key) = :key'
+        );
+        $stmt->execute(
+            array(
+                ':ws_id' => $workspaceId,
+                ':key' => $key
+            )
+        );
+
+        return $stmt->fetchColumn() == 0;
+    }
 
     public function getUnitListByWorkspace($wsId)
     {
@@ -84,62 +122,56 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // adds new user if no user with the given name exists
-    // returns true if ok, false if admin-token not valid or user already exists
-    // token is refreshed via isSuperAdmin
-    public function addUnit($workspaceId, $key, $label, $sourceUnit)
+    public function addUnit($workspaceId, $unitKey, $unitLabel)
     {
-        $myreturn = false;
-        if ($sourceUnit == 0) {
-            $sql = $this->pdoDBhandle->prepare(
-                'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)');
-
-            if ($sql->execute(array(
-                ':workspace' => $workspaceId,
-                ':key' => $key,
-                ':label' => $label,
-                ':now' => date('Y-m-d G:i:s', time())
-            ))) {
-
-                $myreturn = true;
-            }
-        } else {
-            // look for unit properties
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT * FROM units
-                    WHERE units.id =:id and units.workspace_id=:ws');
-
-            if ($sql->execute(array(
-                ':ws' => $workspaceId,
-                ':id' => $sourceUnit))) {
-
-                $data = $sql->fetch(PDO::FETCH_ASSOC);
-                if ($data != false) {
-                    $sql = $this->pdoDBhandle->prepare(
-                        'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) 
-                            VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)');
-
-                    if ($sql->execute(array(
-                        ':workspace' => $workspaceId,
-                        ':key' => $key,
-                        ':label' => $label,
-                        ':now' => date('Y-m-d G:i:s', time()),
-                        ':description' => $data['description'],
-                        ':def' => $data['def'],
-                        ':atId' => $data['authoringtool_id'],
-                        ':pId' => $data['player_id'],
-                        ':defref' => $data['defref']
-                    ))) {
-
-                        $myreturn = true;
-                    }
-                }
-            }
-
+        if(!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
 
-        return $myreturn;
+        $sql = $this->pdoDBhandle->prepare(
+            'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)'
+        );
+
+        return $sql->execute(
+            array(
+                ':workspace' => $workspaceId,
+                ':key' => $unitKey,
+                ':label' => $unitLabel,
+                ':now' => date('Y-m-d G:i:s', time()
+                )
+            )
+        );
+    }
+
+    public function copyUnit($targetWorkspaceId, $targetUnitKey, $targetUnitLabel, $sourceUnitId)
+    {
+        if(!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $targetUnitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $targetWorkspaceId)", 406);
+        }
+
+        $sourceUnit = $this->fetchUnitById($sourceUnitId);
+        if (!$sourceUnit) {
+            return false;
+        } else {
+            $sql = $this->pdoDBhandle->prepare(
+                'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) ' .
+                                 'VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)'
+            );
+
+            return $sql->execute(
+                array(
+                    ':workspace' => $targetWorkspaceId,
+                    ':key' => $targetUnitKey,
+                    ':label' => $targetUnitLabel,
+                    ':now' => date('Y-m-d G:i:s', time()),
+                    ':description' => $sourceUnit['description'],
+                    ':def' => $sourceUnit['def'],
+                    ':atId' => $sourceUnit['authoringtool_id'],
+                    ':pId' => $sourceUnit['player_id'],
+                    ':defref' => $sourceUnit['defref']
+                )
+            );
+        }
     }
 
     public function deleteUnits($workspaceId, $unitIds)
@@ -158,25 +190,32 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function moveUnits($workspaceId, $unitIds, $targetWorkspace)
+    public function moveUnits($targetWorkspaceId, $unitIds)
     {
-        $update_count = 0;
-        foreach ($unitIds as $uid) {
-            $sql_update = $this->pdoDBhandle->prepare(
-                'UPDATE units
-                    SET workspace_id =:ws
-                    WHERE id =:id');
+        $unmovableUnits = array();
 
-            if ($sql_update != false) {
-                if ($sql_update->execute(array(
-                    ':ws' => $targetWorkspace,
-                    ':id' => $uid))) {
-                    $update_count += 1;
+        foreach($unitIds as $unitId) {
+            $unitKey = $this->fetchUnitKeyById($unitId);
+
+            if (!empty($unitKey)) {
+                if (!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $unitKey)) {
+                    array_push($unmovableUnits, $this->fetchUnitById($unitId));
+
+                } else {
+                    $sql_update = $this->pdoDBhandle->prepare(
+                        'UPDATE units SET workspace_id =:ws WHERE id =:id'
+                    );
+                    $sql_update->execute(
+                        array(
+                            ':ws' => $targetWorkspaceId,
+                            ':id' => $unitId
+                        )
+                    );
                 }
             }
         }
 
-        return $update_count === count($unitIds);
+        return $unmovableUnits;
     }
 
     // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
@@ -332,23 +371,31 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function changeUnitProps($myId, $myKey, $myLabel, $myDescription)
+    public function changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription)
     {
         $myreturn = false;
+        $newTrimmedKey = trim($unitKey);
+        $originUnitKey = $this->fetchUnitKeyById($unitId);
+
+        if(strtolower($originUnitKey) !== strtolower($newTrimmedKey) && !$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
+        }
+
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET key =:key, label=:label, description=:description, lastchanged=:now
-                WHERE id =:id');
+            SET key =:key, label=:label, description=:description, lastchanged=:now
+            WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => $myId,
-                ':key' => $myKey,
-                ':label' => $myLabel,
-                ':description' => $myDescription,
+                ':id' => $unitId,
+                ':key' => $newTrimmedKey,
+                ':label' => $unitLabel,
+                ':description' => $unitDescription,
                 ':now' => date('Y-m-d G:i:s', time())
             ));
         }
+
         return $myreturn;
     }
 

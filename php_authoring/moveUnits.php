@@ -11,30 +11,43 @@
 
 		require_once('../vo_code/DBConnectionAuthoring.php');
 
-		// Authorisation
-		$myerrorcode = 503;
-		$myreturn = false;
+        // Authorisation
+        $myerrorcode = 503;
+        $myreturn = false;
+        $unmovableUnits = array();
 
 		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$myWorkspace = $data["ws"];
+			$sourceWorkspaceId = $data["ws"];
+			$targetWorkspaceId = $data["tws"];
+			$unitIds = $data["u"];
 
-			if (isset($myToken)) {
-				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
-					$myerrorcode = 0;
-					$myreturn = $myDBConnection->moveUnits($myWorkspace, $data["u"], $data["tws"]);
-				}
-			}
-		}
-		unset($myDBConnection);
+            if (isset($myToken)) {
+                if ($myDBConnection->canAccessWorkspace($myToken, $sourceWorkspaceId)) {
+                    $myerrorcode = 0;
+                    $unmovableUnits = $myDBConnection->moveUnits($targetWorkspaceId, $unitIds);
 
-		if ($myerrorcode > 0) {
-			http_response_code($myerrorcode);
-		} else {
-			echo(json_encode($myreturn));
-		}
-	}
+                    if($unmovableUnits) {
+                        $myerrorcode = 406;
+                        error_log(print_r($unmovableUnits, true));
+                    } else {
+                        $myreturn = true;
+                    }
+                }
+            }
+        }
+        unset($myDBConnection);
+
+
+        if ($myerrorcode > 0) {
+            error_log('Errorcode = ' . $myerrorcode);
+            http_response_code($myerrorcode);
+        } else {
+            error_log('Return = ' . json_encode($myreturn));
+            echo(json_encode($myreturn));
+        }
+    }
 ?>
