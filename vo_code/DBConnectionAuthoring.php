@@ -153,7 +153,6 @@ class DBConnectionAuthoring extends DBConnection {
     }
 
     public function moveUnits($workspaceId, $unitIds, $targetWorkspace) {
-        $myreturn = false;
         $update_count = 0;
         foreach($unitIds as $uid) {
             $sql_update = $this->pdoDBhandle->prepare(
