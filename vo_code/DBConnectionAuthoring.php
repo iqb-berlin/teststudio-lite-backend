@@ -6,7 +6,8 @@
 
 require_once('DBConnection.php');
 
-class DBConnectionAuthoring extends DBConnection {
+class DBConnectionAuthoring extends DBConnection
+{
     private function fetchUnitById($unitId)
     {
         $stmt = $this->pdoDBhandle->prepare(
@@ -29,7 +30,7 @@ class DBConnectionAuthoring extends DBConnection {
 
         return $stmt->fetchColumn();
     }
-    
+
     private function checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)
     {
         $key = strtolower(trim($unitKey));
@@ -124,7 +125,7 @@ class DBConnectionAuthoring extends DBConnection {
 
     public function addUnit($workspaceId, $unitKey, $unitLabel)
     {
-        if(!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+        if (!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
 
@@ -145,7 +146,7 @@ class DBConnectionAuthoring extends DBConnection {
 
     public function copyUnit($targetWorkspaceId, $targetUnitKey, $targetUnitLabel, $sourceUnitId)
     {
-        if(!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $targetUnitKey)) {
+        if (!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $targetUnitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $targetWorkspaceId)", 406);
         }
 
@@ -155,7 +156,7 @@ class DBConnectionAuthoring extends DBConnection {
         } else {
             $sql = $this->pdoDBhandle->prepare(
                 'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) ' .
-                                 'VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)'
+                'VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)'
             );
 
             return $sql->execute(
@@ -194,7 +195,7 @@ class DBConnectionAuthoring extends DBConnection {
     {
         $unmovableUnits = array();
 
-        foreach($unitIds as $unitId) {
+        foreach ($unitIds as $unitId) {
             $unitKey = $this->fetchUnitKeyById($unitId);
 
             if (!empty($unitKey)) {
@@ -377,7 +378,7 @@ class DBConnectionAuthoring extends DBConnection {
         $newTrimmedKey = trim($unitKey);
         $originUnitKey = $this->fetchUnitKeyById($unitId);
 
-        if(strtolower($originUnitKey) !== strtolower($newTrimmedKey) && !$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+        if (strtolower($originUnitKey) !== strtolower($newTrimmedKey) && !$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
 
