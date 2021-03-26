@@ -188,15 +188,15 @@ class DBConnectionAuthoring extends DBConnection {
 
                 $data = $sql -> fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
-                    $xRootElement = new SimpleXMLElement('<Unit/>');
+                    $xRootElement = new SimpleXMLElement(
+                        '<Unit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation=' .
+                        '"https://raw.githubusercontent.com/iqb-berlin/testcenter-backend/9.1.2/definitions/vo_Unit.xsd" />'
+                    );
                     $xMetadataElement = $xRootElement->addChild('Metadata');
                     $xMetadataElement->addChild('Id', $data['key']);
                     $xMetadataElement->addChild('Label', $data['label']);
                     setlocale(LC_TIME, "de_DE");
-                    $xMetadataElement->addChild('Lastchange', date(DateTime::RFC3339, strtotime($data['lastchanged'])));
-                    $xMetadataElement->addChild('Owner', 'Institut zur Qualitätsentwicklung im Bildungswesen IQB');
-                    $xMetadataElement->addChild('Project', $wsName);
-                    
+
                     if (strlen($data['def']) > 1000) {
                         $xDefElement = $xRootElement->addChild('DefinitionRef', $data['key'] . '.voud');
                         $xDefElement->addAttribute('player', $data['player_id']);
