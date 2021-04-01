@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DATASOURCE=../vo_code/DataSource.json
+DATASOURCE=./vo_code/DataSource.json
 
 POSTGRES_HOST="localhost"
 POSTGRES_PORT="5432"

@@ -13,6 +13,9 @@ down:
 build:
 	cd docker && docker-compose build
 
+data-source:
+	scripts/make_data_source.sh
+
 new-version-major:
 	scripts/new_version.py major
 
