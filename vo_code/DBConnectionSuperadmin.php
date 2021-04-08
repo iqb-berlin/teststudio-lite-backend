@@ -105,7 +105,7 @@ class DBConnectionSuperAdmin extends DBConnection {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT users.name FROM users ORDER BY users.name');
+                'SELECT users.name, users.id, users.is_superadmin FROM users ORDER BY users.name');
         
             if ($sql -> execute()) {
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
