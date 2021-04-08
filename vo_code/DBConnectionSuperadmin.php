@@ -6,10 +6,12 @@
 
 require_once('DBConnection.php');
 
-class DBConnectionSuperAdmin extends DBConnection {
+class DBConnectionSuperAdmin extends DBConnection
+{
     private static $_tempfilepath = '../vo_tmp';
 
-    public static function getTempFilePath() {
+    public static function getTempFilePath()
+    {
         $myreturn = '';
         $myfolder = DBConnectionSuperAdmin::$_tempfilepath;
         if (file_exists($myfolder)) {
@@ -22,7 +24,8 @@ class DBConnectionSuperAdmin extends DBConnection {
         return $myreturn;
     }
 
-    private function verifySuperAdminCredentials($sessionToken, $superAdminPassword) {
+    private function verifySuperAdminCredentials($sessionToken, $superAdminPassword)
+    {
         $result = false;
 
         $stmt = $this->pdoDBhandle->prepare(
@@ -54,13 +57,14 @@ class DBConnectionSuperAdmin extends DBConnection {
     // returns all workspaces if the user associated with the given token is superadmin
     // returns [] if token not valid or no workspaces 
     // token is refreshed via isSuperAdmin
-    public function getWorkspaces($token) {
+    public function getWorkspaces($token)
+    {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspaces.id as id, workspaces.name as label FROM workspaces ORDER BY workspaces.name');
-        
-            if ($sql -> execute()) {
+
+            if ($sql->execute()) {
 
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
                 if ($data != false) {
@@ -75,24 +79,25 @@ class DBConnectionSuperAdmin extends DBConnection {
     // returns the name of the workspace given by id
     // returns '' if not found
     // token is not refreshed
-    public function getWorkspaceName($workspace_id) {
+    public function getWorkspaceName($workspace_id)
+    {
         $myreturn = '';
         if ($this->pdoDBhandle != false) {
 
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspaces.name FROM workspaces
                     WHERE workspaces.id=:workspace_id');
-                
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':workspace_id' => $workspace_id))) {
-                    
-                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+
+                $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data['name'];
                 }
             }
         }
-            
+
         return $myreturn;
     }
 
@@ -101,13 +106,14 @@ class DBConnectionSuperAdmin extends DBConnection {
     // returns all users if the user associated with the given token is superadmin
     // returns [] if token not valid or no users 
     // token is refreshed via isSuperAdmin
-    public function getUsers($token) {
+    public function getUsers($token)
+    {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.name, users.id, users.is_superadmin FROM users ORDER BY users.name');
-        
-            if ($sql -> execute()) {
+
+            if ($sql->execute()) {
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
@@ -117,7 +123,8 @@ class DBConnectionSuperAdmin extends DBConnection {
         return $myreturn;
     }
 
-    public function setSuperAdminFlag($sessionToken, $userId, $superAdminPassword, $isSuperAdmin) {
+    public function setSuperAdminFlag($sessionToken, $userId, $superAdminPassword, $isSuperAdmin)
+    {
         $return = false;
 
         if ($this->verifySuperAdminCredentials($sessionToken, $superAdminPassword)) {
@@ -128,7 +135,7 @@ class DBConnectionSuperAdmin extends DBConnection {
                 ':super_admin_flag' => $isSuperAdmin
             );
 
-            if ($stmt -> execute($params)) {
+            if ($stmt->execute($params)) {
                 $return = true;
             } else {
                 error_log("'is_superadmin' Update failed for user id $userId");
@@ -142,15 +149,16 @@ class DBConnectionSuperAdmin extends DBConnection {
     // returns all workspaces with a flag whether the given user has access to it
     // returns [] if token not valid or user not found
     // token is refreshed via isSuperAdmin
-    public function getWorkspacesByUser($token, $username) {
+    public function getWorkspacesByUser($token, $username)
+    {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspace_users.workspace_id as id FROM workspace_users
                     INNER JOIN users ON users.id = workspace_users.user_id
                     WHERE users.name=:user_name');
-        
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':user_name' => $username))) {
 
                 $userworkspaces = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -163,8 +171,8 @@ class DBConnectionSuperAdmin extends DBConnection {
 
                 $sql = $this->pdoDBhandle->prepare(
                     'SELECT workspaces.id, workspaces.name FROM workspaces ORDER BY workspaces.name');
-            
-                if ($sql -> execute()) {
+
+                if ($sql->execute()) {
                     $allworkspaces = $sql->fetchAll(PDO::FETCH_ASSOC);
                     if ($allworkspaces != false) {
                         foreach ($allworkspaces as $workspace) {
@@ -185,22 +193,23 @@ class DBConnectionSuperAdmin extends DBConnection {
     // sets workspaces to the given user to give access to it
     // returns false if token not valid or user not found
     // token is refreshed via isSuperAdmin
-    public function setWorkspacesByUser($token, $username, $workspaces) {
+    public function setWorkspacesByUser($token, $username, $workspaces)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.id FROM users
                     WHERE users.name=:user_name');
-            if ($sql -> execute(array(
+            if ($sql->execute(array(
                 ':user_name' => $username))) {
-                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+                $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $userid = $data['id'];
                     $sql = $this->pdoDBhandle->prepare(
                         'DELETE FROM workspace_users
                             WHERE workspace_users.user_id=:user_id');
-                
-                    if ($sql -> execute(array(
+
+                    if ($sql->execute(array(
                         ':user_id' => $userid))) {
 
                         $sql_insert = $this->pdoDBhandle->prepare(
@@ -209,8 +218,8 @@ class DBConnectionSuperAdmin extends DBConnection {
                         foreach ($workspaces as $userworkspace) {
                             if ($userworkspace['selected']) {
                                 $sql_insert->execute(array(
-                                        ':workspaceId' => $userworkspace['id'],
-                                        ':userId' => $userid));
+                                    ':workspaceId' => $userworkspace['id'],
+                                    ':userId' => $userid));
                             }
                         }
                         $myreturn = true;
@@ -225,12 +234,13 @@ class DBConnectionSuperAdmin extends DBConnection {
     // sets password of the given user
     // returns false if token not valid or user not found
     // token is refreshed via isSuperAdmin
-    public function setPassword($token, $username, $password) {
+    public function setPassword($token, $username, $password)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'UPDATE users SET password = :password WHERE name = :user_name');
-            if ($sql -> execute(array(
+            if ($sql->execute(array(
                 ':user_name' => $username,
                 ':password' => $this->encryptPassword($password)))) {
                 $myreturn = true;
@@ -243,32 +253,33 @@ class DBConnectionSuperAdmin extends DBConnection {
     // adds new user if no user with the given name exists
     // returns true if ok, false if admin-token not valid or user already exists
     // token is refreshed via isSuperAdmin
-    public function addUser($token, $username, $password) {
+    public function addUser($token, $username, $password)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
 
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.name FROM users
                     WHERE users.name=:user_name');
-                
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':user_name' => $username))) {
-                    
-                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+
+                $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data == false) {
                     $sql = $this->pdoDBhandle->prepare(
                         'INSERT INTO users (name, password) VALUES (:user_name, :user_password)');
-                        
-                    if ($sql -> execute(array(
+
+                    if ($sql->execute(array(
                         ':user_name' => $username,
                         ':user_password' => $this->encryptPassword($password)))) {
-                            
+
                         $myreturn = true;
                     }
                 }
             }
         }
-            
+
         return $myreturn;
     }
 
@@ -276,17 +287,18 @@ class DBConnectionSuperAdmin extends DBConnection {
     // deletes users
     // returns false if token not valid or any delete action failed
     // token is refreshed via isSuperAdmin
-    public function deleteUsers($token, $usernames) {
+    public function deleteUsers($token, $usernames)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'DELETE FROM users
                     WHERE users.name = :user_name');
-        
+
             $myreturn = true;
             foreach ($usernames as $username) {
                 if (!$sql->execute(array(
-                        ':user_name' => $username))) {
+                    ':user_name' => $username))) {
                     $myreturn = false;
                 }
             }
@@ -298,41 +310,43 @@ class DBConnectionSuperAdmin extends DBConnection {
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    public function addWorkspace($token, $name) {
+    public function addWorkspace($token, $name)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
 
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspaces.id FROM workspaces 
                     WHERE workspaces.name=:ws_name');
-                
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':ws_name' => $name))) {
-                    
-                $data = $sql -> fetch(PDO::FETCH_ASSOC);
+
+                $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data == false) {
                     $sql = $this->pdoDBhandle->prepare(
                         'INSERT INTO workspaces (name) VALUES (:ws_name)');
-                        
-                    if ($sql -> execute(array(
+
+                    if ($sql->execute(array(
                         ':ws_name' => $name))) {
-                            
+
                         $myreturn = true;
                     }
                 }
             }
         }
-            
+
         return $myreturn;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    public function setWorkspace($token, $wsid, $name) {
+    public function setWorkspace($token, $wsid, $name)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'UPDATE workspaces SET name = :name WHERE id = :id');
-            if ($sql -> execute(array(
+            if ($sql->execute(array(
                 ':name' => $name,
                 ':id' => $wsid))) {
                 $myreturn = true;
@@ -342,17 +356,18 @@ class DBConnectionSuperAdmin extends DBConnection {
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    public function deleteWorkspaces($token, $wsIds) {
+    public function deleteWorkspaces($token, $wsIds)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'DELETE FROM workspaces
                     WHERE workspaces.id = :ws_id');
-        
+
             $myreturn = true;
             foreach ($wsIds as $wsId) {
                 if (!$sql->execute(array(
-                        ':ws_id' => $wsId))) {
+                    ':ws_id' => $wsId))) {
                     $myreturn = false;
                 }
             }
@@ -362,14 +377,15 @@ class DBConnectionSuperAdmin extends DBConnection {
 
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    public function getUsersByWorkspace($token, $wsId) {
+    public function getUsersByWorkspace($token, $wsId)
+    {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspace_users.user_id as id FROM workspace_users
                     WHERE workspace_users.workspace_id=:ws_id');
-        
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':ws_id' => $wsId))) {
 
                 $workspaceusers = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -382,8 +398,8 @@ class DBConnectionSuperAdmin extends DBConnection {
 
                 $sql = $this->pdoDBhandle->prepare(
                     'SELECT users.id, users.name FROM users ORDER BY users.name');
-            
-                if ($sql -> execute()) {
+
+                if ($sql->execute()) {
                     $allusers = $sql->fetchAll(PDO::FETCH_ASSOC);
                     if ($allusers != false) {
                         foreach ($allusers as $user) {
@@ -401,15 +417,16 @@ class DBConnectionSuperAdmin extends DBConnection {
 
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    public function setUsersByWorkspace($token, $wsId, $users) {
+    public function setUsersByWorkspace($token, $wsId, $users)
+    {
         $myreturn = false;
         if ($this->isSuperAdmin($token)) {
 
             $sql = $this->pdoDBhandle->prepare(
                 'DELETE FROM workspace_users
                     WHERE workspace_users.workspace_id=:ws_id');
-        
-            if ($sql -> execute(array(
+
+            if ($sql->execute(array(
                 ':ws_id' => $wsId))) {
 
                 $sql_insert = $this->pdoDBhandle->prepare(
@@ -419,8 +436,8 @@ class DBConnectionSuperAdmin extends DBConnection {
                 foreach ($users as $workspaceuser) {
                     if ($workspaceuser['selected']) {
                         if (!$sql_insert->execute(array(
-                                ':workspaceId' => $wsId,
-                                ':userId' => $workspaceuser['id']))) {
+                            ':workspaceId' => $wsId,
+                            ':userId' => $workspaceuser['id']))) {
                             $myreturn = false;
                         }
                     }
@@ -429,15 +446,17 @@ class DBConnectionSuperAdmin extends DBConnection {
         }
         return $myreturn;
     }
+
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
 
-    public function getItemAuthoringTools($token) {
+    public function getItemAuthoringTools($token)
+    {
         $myreturn = [];
         if ($this->isSuperAdmin($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT workspaces.id as id, workspaces.name as label FROM workspaces ORDER BY workspaces.name');
-        
-            if ($sql -> execute()) {
+
+            if ($sql->execute()) {
 
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
                 if ($data != false) {
@@ -448,4 +467,5 @@ class DBConnectionSuperAdmin extends DBConnection {
         return $myreturn;
     }
 }
+
 ?>
