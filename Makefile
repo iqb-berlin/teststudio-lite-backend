@@ -14,7 +14,7 @@ build:
 	cd docker && docker-compose build
 
 data-source:
-	scripts/make_data_source.sh $(POSTGRES_HOST) $(POSTGRES_PORT) $(POSTGRES_DB) $(POSTGRES_USER) $(POSTGRES_PASSWORD)
+	scripts/make_data_source.sh $(DB_HOST) $(DB_PORT) $(DB_SCHEMA) $(DB_USER) $(DB_PASSWORD)
 
 new-version-major:
 	scripts/new_version.py major

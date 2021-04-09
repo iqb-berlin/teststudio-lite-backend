@@ -71,13 +71,19 @@ sudo chown -R www-data:www-data itemplayers
 sudo chown -R www-data:www-data vo_tmp
 ```
 
-- Create a PostgreSQL database.
-- Set up database schema (replace `{db_user_name}` and `{database_name}` by your PostgreSQL-credentials)
+- Install PostgreSQL and setup basic db information like db host name, db port, db user, and db user password (cited below as `{my_host}`, `{my_port}`, `
+  {my_db_schema}`, `{my_db_user}`, and `{my_db_password}`).
+- Import 'IQB Itemdatenbank' SQL dump into your database schema (replace `{my_db_user}` and `{my_db_schema}` by your PostgreSQL basic configuration):
 ```
-psql -U {db_user_name} {database_name} < create/postgresql.sql
+psql -U {my_db_user} {my_db_schema} < create/IQB_Itemdatenbank_Database_CreatePG.sql
 ```
 
-- Open `vo_code/DBConnectionData.json` and put in your PostgreSQL-credentials.
+- Create a db connection file for the php backend with `make data-source [DB_HOST={my_host}] [DB_PORT={my_port}] [DB_SCHEMA={my_db_schema}] [DB_USER={my_db_user}] {DB_PASSWORD={my_db_password}}` and replace 
+  `{my_host}`, `{my_port}`, `{my_db_schema}`, `{my_db_user}`, and `{my_db_password}` with your own db configuration data or `make data-source` with default 
+  connection information, which is equivalent to:
+```
+make data-source DB_HOST=localhost DB_PORT=5432 DB_SCHEMA=veraonline_itemdb DB_USER=root DB_PASSWORD=psqllocal
+```
 
 - Run init-script to create first super-user and workspace (replace `{user_name}`, `user_password}`
 and `{workspace_name}` by whatever you want as credentials.)
