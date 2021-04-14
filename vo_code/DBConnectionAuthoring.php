@@ -389,6 +389,17 @@ class DBConnectionAuthoring extends DBConnection
         }
         return $myreturn;
     }
+
+    public function setUnitPlayer($unitId, $playerId)
+    {
+        $stmt = $this->pdoDBhandle->prepare('UPDATE units SET player_id= :pl, lastchanged= :now WHERE id = :id');
+        $params = array(
+            ':id' => $unitId,
+            ':pl' => $playerId,
+            ':now' => date('Y-m-d G:i:s', time()));
+
+        return $stmt->execute($params);
+    }
 }
 
 ?>
