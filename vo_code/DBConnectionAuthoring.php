@@ -453,23 +453,11 @@ class DBConnectionAuthoring extends DBConnection
      * @param array $fileUploadMetaData <p>
      * Array of file upload metadata
      * </p>
-     * @return false|string fileUploadTmpName
      * @throws ErrorException if file upload has failed
      */
-    public function getFileUploadTmpName(array $fileUploadMetaData)
+    public function handleFileUpload(array $fileUploadMetaData)
     {
-        if (isset($fileUploadMetaData) && $fileUploadMetaData['error'] == UPLOAD_ERR_OK) {
-            $filename = $fileUploadMetaData['name'];
-            $fileType = $fileUploadMetaData['type'];
-            $fileTmpName = $fileUploadMetaData['tmp_name'];
-            $fileSize = $fileUploadMetaData['size'];
-
-            error_log("filename = $filename");
-            error_log("fileType = $fileType");
-            error_log("fileTmpName = $fileTmpName");
-            error_log("fileSize = $fileSize");
-
-        } else {
+        if (empty($fileUploadMetaData) || $fileUploadMetaData['error'] != UPLOAD_ERR_OK) {
             $fileUploadError = $fileUploadMetaData['error'];
             error_log("fileError = $fileUploadError");
 
@@ -490,10 +478,37 @@ class DBConnectionAuthoring extends DBConnection
                 default:
                     break;
             }
+
             throw new ErrorException($errorMessage, $errorCode);
         }
 
-        return $fileTmpName;
+        error_log("filename = " . $fileUploadMetaData['name']);
+        error_log("fileType = " . $fileUploadMetaData['type']);
+        error_log("fileTmpName = " . $fileUploadMetaData['tmp_name']);
+        error_log("fileSize = " . $fileUploadMetaData['size']);
+    }
+
+    /**
+     * @param string $filename <p>
+     * Path to the tested file.
+     * </p>
+     * @param array $allowedMimeTypes <p>
+     * Array of allowed key value pairs of MIME content type (key) and file type (value)
+     * </p>
+     * @return false|string $mimeType the allowed content type in MIME format, like
+     * text/plain or application/octet-stream.
+     * @throws ErrorException with code 415, if the detected MIME content type is not allowed.
+     */
+    public function verifyMimeType(string $filename, array $allowedMimeTypes)
+    {
+        $mimeType = mime_content_type($filename);
+        error_log("mimeType = $mimeType");
+
+        if (!isset($allowedMimeTypes[$mimeType])) {
+            throw new ErrorException('File upload failed due to unallowed mime type: ' . $mimeType, 415);
+        }
+
+        return $mimeType;
     }
 
 }

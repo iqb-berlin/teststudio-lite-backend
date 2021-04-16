@@ -2,7 +2,8 @@
 // www.IQB.hu-berlin.de
 // license: MIT
 
-$allowed_mime_types = [
+const UPLOAD_BASE_DIR = '../vo_tmp/';
+const ALLOWED_FILE_TYPES = [
     'text/xml' => 'xml',
     'text/plain' => 'voud',
     'application/json' => 'json',
@@ -30,9 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
         error_log("processId = $processId");
         error_log(json_encode($_FILES));
 
-        if (isset($sessionToken) && isset($processId)) {
+        if (!empty($sessionToken) && !empty($processId)) {
+            $uploadDir = UPLOAD_BASE_DIR . $processId . '/';
+            file_exists($uploadDir) ? $uploadDir : mkdir($uploadDir);
+
             try {
-                $fileTmpName = $dbConnection->getFileUploadTmpName($fileUploadMetaData);
+                $dbConnection->handleFileUpload($fileUploadMetaData);
+                $mimeType = $dbConnection->verifyMimeType($fileUploadMetaData['tmp_name'], ALLOWED_FILE_TYPES);
 
             } catch (Exception $exception) {
                 error_log($exception->getMessage());
