@@ -505,10 +505,110 @@ class DBConnectionAuthoring extends DBConnection
         error_log("mimeType = $mimeType");
 
         if (!isset($allowedMimeTypes[$mimeType])) {
-            throw new ErrorException('File upload failed due to unallowed mime type: ' . $mimeType, 415);
+            throw new ErrorException('File upload failed due to not allowed mime type: ' . $mimeType, 415);
         }
 
         return $mimeType;
+    }
+
+    /**
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param string $uploadFileTmpName <p>
+     * Upload file tmp name
+     * </p>
+     * @param array $allowedMimeTypes <p>
+     * Array of allowed key value pairs of MIME content type (key) and file type (value)
+     * </p>
+     * @throws ErrorException <p>
+     * with code 400, if the zip file is corrupt or cannot be opened
+     * </p><p>
+     * with code 415, if the detected file extension of an archive entry is not allowed.
+     * </p>
+     */
+    function extractZipArchive(string $uploadPath, string $uploadFileTmpName, array $allowedMimeTypes)
+    {
+        $zip = new ZipArchive;
+        if ($zip->open($uploadFileTmpName) === true) {
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $archiveEntryName = $zip->getNameIndex($i);
+                $fileInfo = pathinfo($archiveEntryName);
+
+                error_log("archiveEntryName = " . $archiveEntryName);
+                error_log("filename = " . $fileInfo['filename']);
+                error_log("dirname = " . $fileInfo['dirname']);
+                error_log("basename = " . $fileInfo['basename']);
+                error_log("extension = " . $fileInfo['extension']);
+
+                $sourcePath = "zip://" . $uploadFileTmpName . "#" . $archiveEntryName;
+                $targetPath = $uploadPath . $fileInfo['basename'];
+
+                error_log("sourcePath = $sourcePath");
+                error_log("targetPath = $targetPath");
+
+                $allowedFileTypes = array_values($allowedMimeTypes);
+                error_log("Allowed file types:\n" . print_r($allowedFileTypes, true));
+
+                if (!in_array($fileInfo['extension'], $allowedFileTypes)) {
+                    throw new ErrorException(
+                        'File upload failed due to not allowed file type: ' . $fileInfo['extension'], 415);
+                }
+                if ($fileInfo['extension'] == 'zip') {
+                    error_log("zip in zip");
+                    //$this->extractZipArchive($uploadPath, $sourcePath, $allowedMimeTypes);
+                }
+                //else {
+                    if (!file_exists($uploadPath)) {
+                        mkdir($uploadPath);
+                    }
+
+                    copy($sourcePath, $targetPath);
+                //}
+            }
+
+            $zip->close();
+        } else {
+            throw new ErrorException('Could not extract Zip-File', 400);
+        }
+
+        unlink($uploadFileTmpName);
+    }
+
+    /**
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param array $fileUploadMetaData <p>
+     * Array of file upload metadata
+     * </p>
+     * @throws ErrorException with code 409 if file already exists
+     */
+    function saveUnitFile(string $uploadPath, array $fileUploadMetaData)
+    {
+        $unitFilename = $uploadPath . $fileUploadMetaData['name'];
+
+        error_log("Save unit at '$unitFilename' ...");
+        error_log("uploadDir = $uploadPath");
+        error_log("filename = " . $fileUploadMetaData['name']);
+        error_log("fileType = " . $fileUploadMetaData['type']);
+        error_log("fileTmpName = " . $fileUploadMetaData['tmp_name']);
+        error_log("fileSize = " . $fileUploadMetaData['size']);
+
+        if (!file_exists($uploadPath)) {
+            mkdir($uploadPath);
+        }
+
+        if (!file_exists($unitFilename)) {
+            move_uploaded_file($fileUploadMetaData['tmp_name'], $unitFilename)
+                ? error_log("Unit saved!")
+                : error_log("Save failed!");
+        } else {
+            throw new ErrorException(
+                "Uploaded unit file '" . $fileUploadMetaData['name'] . "' already exists!",
+                409);
+        }
     }
 
 }
