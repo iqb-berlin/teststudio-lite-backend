@@ -1,4 +1,6 @@
 <?php
+require_once('VeronaFile.class.php');
+
 class VeronaFolder
 {
     public static $location = '../vo_verona';
