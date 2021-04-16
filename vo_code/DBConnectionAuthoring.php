@@ -448,6 +448,54 @@ class DBConnectionAuthoring extends DBConnection
 
         return $stmt->execute($params);
     }
+
+    /**
+     * @param array $fileUploadMetaData <p>
+     * Array of file upload metadata
+     * </p>
+     * @return false|string fileUploadTmpName
+     * @throws ErrorException if file upload has failed
+     */
+    public function getFileUploadTmpName(array $fileUploadMetaData)
+    {
+        if (isset($fileUploadMetaData) && $fileUploadMetaData['error'] == UPLOAD_ERR_OK) {
+            $filename = $fileUploadMetaData['name'];
+            $fileType = $fileUploadMetaData['type'];
+            $fileTmpName = $fileUploadMetaData['tmp_name'];
+            $fileSize = $fileUploadMetaData['size'];
+
+            error_log("filename = $filename");
+            error_log("fileType = $fileType");
+            error_log("fileTmpName = $fileTmpName");
+            error_log("fileSize = $fileSize");
+
+        } else {
+            $fileUploadError = $fileUploadMetaData['error'];
+            error_log("fileError = $fileUploadError");
+
+            $errorMessage = 'File Upload failed.';
+            $errorCode = 400;
+
+            switch ($fileUploadError) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $errorMessage = 'The file exceeds the maximum permitted size.';
+                    $errorCode = 413;
+                    break;
+
+                case UPLOAD_ERR_NO_FILE:
+                    $errorMessage = 'No file selected for upload.';
+                    break;
+
+                default:
+                    break;
+            }
+            throw new ErrorException($errorMessage, $errorCode);
+        }
+
+        return $fileTmpName;
+    }
+
 }
 
 ?>
