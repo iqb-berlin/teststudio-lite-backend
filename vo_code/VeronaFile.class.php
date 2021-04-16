@@ -1,7 +1,7 @@
 <?php
 
 class VeronaFile {
-    public static array $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+    public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
     public $size = 0;
     public string $sizeStr = '0';
     public $fileDate = 0;
