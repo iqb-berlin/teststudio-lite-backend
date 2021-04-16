@@ -1,7 +1,7 @@
 <?php
 class VeronaFolder
 {
-    public static string $location = '../vo_verona';
+    public static $location = '../vo_verona';
 
     static function getModuleList(): array {
         $myReturn = [];

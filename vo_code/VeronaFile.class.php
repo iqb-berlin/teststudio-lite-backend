@@ -3,14 +3,14 @@
 class VeronaFile {
     public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
     public $size = 0;
-    public string $sizeStr = '0';
+    public $sizeStr = '0';
     public $fileDate = 0;
-    public string $fileDateStr = 'n/a';
-    public string $filename;
-    public array $meta = [];
-    public array $validationReport = [];
-    public bool $isPlayer = false;
-    public bool $isEditor = false;
+    public $fileDateStr = 'n/a';
+    public $filename;
+    public $meta = [];
+    public $validationReport = [];
+    public $isPlayer = false;
+    public $isEditor = false;
 
     public function __construct($fullFilename) {
         $this->filename = $fullFilename;
