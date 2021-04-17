@@ -70,7 +70,8 @@ class VeronaFile {
                 $this->id = $this->name . '@' . $versionMatches[0] . '.' . $versionMatches[1];
                 $this->label = $meta['title'] . ' v' . $versionMatches[0] . '.' . $versionMatches[1];
             } else {
-                $this->errorMessage = '`data-version` attribute not semver format as expected!';
+                $errSublement = implode(' // ', $versionMatches);
+                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . '/' . $errSublement . ').';
             }
         } else {
             $this->errorMessage = 'Missing `data-api-version` and/or `data-version` attribute in meta-information!';
