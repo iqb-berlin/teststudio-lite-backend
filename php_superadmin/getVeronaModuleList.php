@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
             if ($myDBConnection->isSuperAdmin($myToken)) {
                 $myErrorCode = 0;
                 require_once('../vo_code/VeronaFolder.class.php');
+                date_default_timezone_set('Europe/Berlin');
                 $myReturn = VeronaFolder::getModuleList();
             }
         }

@@ -20,9 +20,7 @@ class VeronaFile {
         $this->filename = basename($fullFilename);
         $this->fileDate = filemtime($fullFilename);
         if ($this->fileDate > 0) {
-            $timeZone = new DateTimeZone('Europe/Berlin');
-            $dateTime = new DateTime($this->fileDate, $timeZone);
-            $this->fileDateStr = date('d.m.Y H:i', $dateTime->getTimestamp());
+            $this->fileDateStr = date('d.m.Y H:i', $this->fileDate);
         }
         $this->size = filesize($fullFilename);
         if ($this->size > 0) {
