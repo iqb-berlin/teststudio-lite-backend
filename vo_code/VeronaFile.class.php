@@ -1,4 +1,5 @@
 <?php
+require_once('ValidationReportEntry.class.php');
 
 class VeronaFile {
     public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
