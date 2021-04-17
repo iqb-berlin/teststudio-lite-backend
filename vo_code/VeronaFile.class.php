@@ -56,7 +56,7 @@ class VeronaFile {
         }
         if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
             $versionMatches = [];
-            preg_match('/\d/', $meta['version'], $versionMatches);
+            preg_match('/\d+/g', $meta['version'], $versionMatches);
             if (count($versionMatches) > 3) {
                 if ($meta['type'] == 'verona-editor') {
                     $this->isEditor = true;
