@@ -57,7 +57,7 @@ class VeronaFile {
         if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
             $versionMatches = null;
             $regexReturn = preg_match_all('/\d+/', $meta['version'], $versionMatches);
-            if ($regexReturn && count($versionMatches) > 2) {
+            if ($regexReturn && (count($versionMatches) > 0) && (count($versionMatches[0]) > 2)) {
                 if ($meta['type'] == 'verona-editor') {
                     $this->isEditor = true;
                 } else {
@@ -67,22 +67,14 @@ class VeronaFile {
                 $this->name = strtolower(trim($meta['name']));
                 $this->version = strtolower(trim($meta['version']));
                 $this->veronaVersion = strtolower(trim($meta['verona-version']));
-                $this->id = $this->name . '@' . $versionMatches[0] . '.' . $versionMatches[1];
-                $this->label = $meta['title'] . ' v' . $versionMatches[0] . '.' . $versionMatches[1];
+                $this->id = $this->name . '@' . $versionMatches[0][0] . '.' . $versionMatches[0][1];
+                $this->label = $meta['title'] . ' v' . $versionMatches[0][0] . '.' . $versionMatches[0][1];
             } else {
-                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . '/' . $this->var_dump_ret($versionMatches) . ').';
+                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . ').';
             }
         } else {
             $this->errorMessage = 'Missing `data-api-version` and/or `data-version` attribute in meta-information!';
         }
-    }
-
-    private function var_dump_ret($mixed = null) {
-        ob_start();
-        var_dump($mixed);
-        $content = ob_get_contents();
-        ob_end_clean();
-        return $content;
     }
 
     private static function getMetaElement(DOMDocument $document): ?DOMElement {
