@@ -70,12 +70,19 @@ class VeronaFile {
                 $this->id = $this->name . '@' . $versionMatches[0] . '.' . $versionMatches[1];
                 $this->label = $meta['title'] . ' v' . $versionMatches[0] . '.' . $versionMatches[1];
             } else {
-                $errSublement = implode(' // ', $versionMatches);
-                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . '/' . $errSublement . ') - ' . $regexReturn;
+                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . '/' . $this->var_dump_ret($versionMatches) . ').';
             }
         } else {
             $this->errorMessage = 'Missing `data-api-version` and/or `data-version` attribute in meta-information!';
         }
+    }
+
+    private function var_dump_ret($mixed = null) {
+        ob_start();
+        var_dump($mixed);
+        $content = ob_get_contents();
+        ob_end_clean();
+        return $content;
     }
 
     private static function getMetaElement(DOMDocument $document): ?DOMElement {
