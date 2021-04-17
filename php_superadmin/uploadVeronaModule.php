@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                                 }
                             } else {
                                 if (!rename($tempFilename, $targetFilename)) {
-                                    $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben.';
+                                    $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben (' . $targetFilename . ').';
                                     unlink($tempFilename);
                                 } else {
                                     $myReturn = 'OK';
