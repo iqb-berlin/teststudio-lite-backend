@@ -37,7 +37,7 @@ class VeronaFolder
         return $myReturn;
     }
 
-    static function deleteOldVersion(string $id): bool {
+    static function deleteModule(string $id): bool {
         $myReturn = true;
         $myFolder = VeronaFolder::$location;
         if (file_exists($myFolder)) {

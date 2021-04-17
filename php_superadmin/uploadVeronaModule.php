@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                         if ($veronaModule->isPlayer || $veronaModule->isEditor) {
                             $targetFilename = VeronaFolder::$location . '/' .
                                 $veronaModule->name . '@' . $veronaModule->version . '.html';;
-                            if (VeronaFolder::deleteOldVersion($veronaModule->id)) {
+                            if (VeronaFolder::deleteModule($veronaModule->id)) {
                                 if (!rename($tempFilename, $targetFilename)) {
                                     $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben (' . $targetFilename . ').';
                                     unlink($tempFilename);
