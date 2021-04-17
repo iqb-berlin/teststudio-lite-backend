@@ -70,7 +70,7 @@ class VeronaFile {
                 $this->id = $this->name . '@' . $versionMatches[1] . '.' . $versionMatches[2];
                 $this->label = $meta['title'] . ' v' . $versionMatches[1] . '.' . $versionMatches[2];
             } else {
-                $errSublement = strval($versionMatches);
+                $errSublement = implode(' // ', $versionMatches);
                 $this->errorMessage = '`data-version` attribute not semver format as expected (' . $errSublement . ').';
             }
         } else {
