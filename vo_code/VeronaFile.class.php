@@ -6,19 +6,22 @@ class VeronaFile {
     public $sizeStr = '0';
     public $fileDate = 0;
     public $fileDateStr = 'n/a';
-    public $filename;
-    public $meta = [];
+    public $filename = '';
+    public $version = '';
+    public $veronaVersion = '';
+    public $name = '';
     public $validationReport = [];
     public $isPlayer = false;
     public $isEditor = false;
+    public $label = '';
+    public $id = '';
 
     public function __construct($fullFilename) {
-        $this->filename = $fullFilename;
+        $this->filename = basename($fullFilename);
         $this->fileDate = filemtime($fullFilename);
         if ($this->fileDate > 0) {
-            $this->fileDateStr = date(DATE_ATOM, $this->fileDate);
             setlocale(LC_TIME, "de_DE");
-            $this->fileDateStr = strftime('%x', $this->fileDateStr);
+            $this->fileDateStr = strftime('%x', $this->fileDate);
         }
         $this->size = filesize($fullFilename);
         if ($this->size > 0) {
@@ -27,34 +30,49 @@ class VeronaFile {
         $fileContent = file_get_contents($fullFilename);
         $document = new DOMDocument();
         $document->loadHTML($fileContent, LIBXML_NOERROR);
-        $this->meta['title'] = VeronaFile::getMetaTitle($document);
-        $meta = VeronaFile::getMetaElement($document);
-        if (!$meta) {
+        $meta = [];
+        $meta['title'] = VeronaFile::getMetaTitle($document);
+        $metaElement = VeronaFile::getMetaElement($document);
+        if (!$metaElement) {
             $this->report('warning', 'No meta-information for this player found.');
             return;
         }
-        if (!$meta->getAttribute('content')) {
+        if (!$metaElement->getAttribute('content')) {
             $this->report('warning', 'Missing `content` attribute in meta-information!');
             return;
         }
 
-        $this->meta['id'] = $meta->getAttribute('content');
-        $this->meta['version'] = $meta->getAttribute('data-version');
-        $this->meta['type'] = $meta->getAttribute('data-type');
-        $this->meta['verona-version'] = $meta->getAttribute('data-api-version');
-        $this->meta['repository-url'] = $meta->getAttribute('data-repository-url');
+        $meta['name'] = $metaElement->getAttribute('content');
+        $meta['version'] = $metaElement->getAttribute('data-version');
+        $meta['type'] = $metaElement->getAttribute('data-type');
+        $meta['verona-version'] = $metaElement->getAttribute('data-api-version');
+        $meta['repository-url'] = $metaElement->getAttribute('data-repository-url');
 
-        foreach ($this->meta as $key => $value) {
+        foreach ($meta as $key => $value) {
             if (!$value) {
-                unset($this->meta[$key]);
+                unset($meta[$key]);
             }
         }
-        if ($this->meta['verona-version']) {
-            if ($this->meta['type'] == 'verona-editor') {
-                $this->isEditor = true;
+        if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
+            $versionMatches = [];
+            preg_match('/\d/', $meta['version'], $versionMatches);
+            if (count($versionMatches) > 3) {
+                if ($meta['type'] == 'verona-editor') {
+                    $this->isEditor = true;
+                } else {
+                    // players do not carry type attribute up to verona version 3.0
+                    $this->isPlayer = true;
+                }
+                $this->name = strtolower(trim($meta['name']));
+                $this->version = strtolower(trim($meta['version']));
+                $this->veronaVersion = strtolower(trim($meta['verona-version']));
+                $this->id = $this->name . '@' . $versionMatches[1] . '.' . $versionMatches[2];
+                $this->label = $meta['title'] . ' v' . $versionMatches[1] . '.' . $versionMatches[2];
             } else {
-                $this->isPlayer = true;
+                $this->report('error', '`data-version` attribute not semver format as expected!');
             }
+        } else {
+            $this->report('error', 'Missing `data-api-version` and/or `data-version` and/or `content` attribute in meta-information!');
         }
     }
 

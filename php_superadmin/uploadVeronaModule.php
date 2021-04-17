@@ -35,26 +35,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // move file from php-server-tmp folder to tmp-folder
                     if (move_uploaded_file($_FILES['verona-module']['tmp_name'], $tempFilename)) {
-                        $targetFilename = VeronaFolder::$location . '/' . $originalTargetFilename;
-                        $myReturn = 'OK';
-                        if (file_exists($targetFilename)) {
-                            if (!unlink($targetFilename)) {
-                                $myReturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
-                                $targetFilename = '';
-                                unlink($tempFilename);
-                            }
-                        }
-                        if (strlen($targetFilename) > 0) {
-                            $veronaModule = new VeronaFile($tempFilename);
-                            if ($veronaModule->isPlayer || $veronaModule->isEditor) {
-                                if (!rename($tempFilename, $targetFilename)) {
-                                    $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben.';
+                        $veronaModule = new VeronaFile($tempFilename);
+                        if ($veronaModule->isPlayer || $veronaModule->isEditor) {
+                            $targetFilename = VeronaFolder::$location . '/' .
+                                $veronaModule->name . '@' . $veronaModule->version . '.html';;
+                            if (file_exists($targetFilename)) {
+                                if (!unlink($targetFilename)) {
+                                    $myReturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
+                                    $targetFilename = '';
                                     unlink($tempFilename);
                                 }
                             } else {
-                                $myReturn = 'e:Datei nicht als Verona-Modul erkannt.';
-                                unlink($tempFilename);
+                                if (!rename($tempFilename, $targetFilename)) {
+                                    $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben.';
+                                    unlink($tempFilename);
+                                } else {
+                                    $myReturn = 'OK';
+                                }
                             }
+                        } else {
+                            $myReturn = 'e:Datei nicht als Verona-Modul erkannt.';
+                            unlink($tempFilename);
                         }
                     } else {
                         $myReturn = 'e:Datei abgelehnt (Sicherheitsrisiko?)';

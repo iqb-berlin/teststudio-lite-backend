@@ -3,7 +3,7 @@ require_once('VeronaFile.class.php');
 
 class VeronaFolder
 {
-    public static $location = '../vo_verona';
+    public static $location = '../verona-modules';
 
     static function getModuleList(): array {
         $myReturn = [];
@@ -15,9 +15,11 @@ class VeronaFolder
                 if (is_file($fullFilename)) {
                     $veronaFile = new VeronaFile($fullFilename);
                     array_push($myReturn, [
-                        'id' => $veronaFile->meta['id'],
-                        'name' => $veronaFile->meta['title'],
-                        'verona-version' => $veronaFile->meta['verona-version'],
+                        'id' => $veronaFile->id,
+                        'name' => $veronaFile->name,
+                        'label' => $veronaFile->label,
+                        'version' => $veronaFile->version,
+                        'veronaVersion' => $veronaFile->veronaVersion,
                         'filename' => $veronaFile->filename,
                         'filesize' => $veronaFile->size,
                         'filesizeStr' => $veronaFile->sizeStr,
