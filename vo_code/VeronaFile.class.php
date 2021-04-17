@@ -7,11 +7,9 @@ class VeronaFile {
     public $fileDate = 0;
     public $fileDateStr = 'n/a';
     public $filename = '';
-    public $filelink = '';
     public $version = '';
     public $veronaVersion = '';
     public $name = '';
-    public $validationReport = [];
     public $isPlayer = false;
     public $isEditor = false;
     public $label = '';
@@ -19,12 +17,10 @@ class VeronaFile {
     public $errorMessage = '';
 
     public function __construct($fullFilename) {
-        $this->filelink = $fullFilename;
         $this->filename = basename($fullFilename);
         $this->fileDate = filemtime($fullFilename);
         if ($this->fileDate > 0) {
-            setlocale(LC_TIME, "de_DE");
-            $this->fileDateStr = strftime('%x', $this->fileDate);
+            $this->fileDateStr = date('DD.MM.YY H:i', $this->fileDate);
         }
         $this->size = filesize($fullFilename);
         if ($this->size > 0) {

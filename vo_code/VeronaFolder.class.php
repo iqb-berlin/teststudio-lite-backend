@@ -22,7 +22,7 @@ class VeronaFolder
                             'version' => $veronaFile->version,
                             'veronaVersion' => $veronaFile->veronaVersion,
                             'filename' => $veronaFile->filename,
-                            'filelink' => $veronaFile->filelink,
+                            'filelink' => VeronaFolder::$location . '/' . $veronaFile->filename,
                             'filesize' => $veronaFile->size,
                             'filesizeStr' => $veronaFile->sizeStr,
                             'fileDatetime' => $veronaFile->fileDate,
