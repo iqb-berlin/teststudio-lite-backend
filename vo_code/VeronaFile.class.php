@@ -1,5 +1,4 @@
 <?php
-require_once('ValidationReportEntry.class.php');
 
 class VeronaFile {
     public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
@@ -16,6 +15,7 @@ class VeronaFile {
     public $isEditor = false;
     public $label = '';
     public $id = '';
+    public $errorMessage = '';
 
     public function __construct($fullFilename) {
         $this->filename = basename($fullFilename);
@@ -35,11 +35,11 @@ class VeronaFile {
         $meta['title'] = VeronaFile::getMetaTitle($document);
         $metaElement = VeronaFile::getMetaElement($document);
         if (!$metaElement) {
-            $this->report('warning', 'No meta-information for this player found.');
+            $this->errorMessage = 'No meta-information for this player found.';
             return;
         }
         if (!$metaElement->getAttribute('content')) {
-            $this->report('warning', 'Missing `content` attribute in meta-information!');
+            $this->errorMessage = 'Missing `content` attribute in meta-information!';
             return;
         }
 
@@ -70,16 +70,11 @@ class VeronaFile {
                 $this->id = $this->name . '@' . $versionMatches[1] . '.' . $versionMatches[2];
                 $this->label = $meta['title'] . ' v' . $versionMatches[1] . '.' . $versionMatches[2];
             } else {
-                $this->report('error', '`data-version` attribute not semver format as expected!');
+                $this->errorMessage = '`data-version` attribute not semver format as expected!';
             }
         } else {
-            $this->report('error', 'Missing `data-api-version` and/or `data-version` and/or `content` attribute in meta-information!');
+            $this->errorMessage = 'Missing `data-api-version` and/or `data-version` attribute in meta-information!';
         }
-    }
-
-    public function report(string $level, string $message): void {
-
-        $this->validationReport[] = new ValidationReportEntry($level, $message);
     }
 
     private static function getMetaElement(DOMDocument $document): ?DOMElement {

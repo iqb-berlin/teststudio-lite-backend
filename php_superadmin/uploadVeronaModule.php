@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                                 }
                             }
                         } else {
-                            $myReturn = 'e:Datei nicht als Verona-Modul erkannt.';
+                            $myReturn = 'e:Datei nicht als Verona-Modul erkannt: ' . $veronaModule->errorMessage;
                             unlink($tempFilename);
                         }
                     } else {
