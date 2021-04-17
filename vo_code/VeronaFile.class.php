@@ -55,9 +55,9 @@ class VeronaFile {
             }
         }
         if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
-            $versionMatches = [];
-            preg_match('/\d+/g', $meta['version'], $versionMatches);
-            if (count($versionMatches) > 3) {
+            $versionMatches = null;
+            preg_match_all('/\d+/', $meta['version'], $versionMatches);
+            if ($versionMatches && count($versionMatches) > 2) {
                 if ($meta['type'] == 'verona-editor') {
                     $this->isEditor = true;
                 } else {
@@ -67,11 +67,10 @@ class VeronaFile {
                 $this->name = strtolower(trim($meta['name']));
                 $this->version = strtolower(trim($meta['version']));
                 $this->veronaVersion = strtolower(trim($meta['verona-version']));
-                $this->id = $this->name . '@' . $versionMatches[1] . '.' . $versionMatches[2];
-                $this->label = $meta['title'] . ' v' . $versionMatches[1] . '.' . $versionMatches[2];
+                $this->id = $this->name . '@' . $versionMatches[0] . '.' . $versionMatches[1];
+                $this->label = $meta['title'] . ' v' . $versionMatches[0] . '.' . $versionMatches[1];
             } else {
-                $errSublement = implode(' // ', $versionMatches);
-                $this->errorMessage = '`data-version` attribute not semver format as expected (' . $errSublement . ').';
+                $this->errorMessage = '`data-version` attribute not semver format as expected!';
             }
         } else {
             $this->errorMessage = 'Missing `data-api-version` and/or `data-version` attribute in meta-information!';
