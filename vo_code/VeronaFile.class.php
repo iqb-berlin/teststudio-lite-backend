@@ -20,7 +20,7 @@ class VeronaFile {
         $this->filename = basename($fullFilename);
         $this->fileDate = filemtime($fullFilename);
         if ($this->fileDate > 0) {
-            $this->fileDateStr = date('dd.mm.Y H:i', $this->fileDate);
+            $this->fileDateStr = date('d.m.Y H:i', $this->fileDate);
         }
         $this->size = filesize($fullFilename);
         if ($this->size > 0) {
