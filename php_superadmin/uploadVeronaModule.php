@@ -39,19 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                         if ($veronaModule->isPlayer || $veronaModule->isEditor) {
                             $targetFilename = VeronaFolder::$location . '/' .
                                 $veronaModule->name . '@' . $veronaModule->version . '.html';;
-                            if (file_exists($targetFilename)) {
-                                if (!unlink($targetFilename)) {
-                                    $myReturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
-                                    $targetFilename = '';
-                                    unlink($tempFilename);
-                                }
-                            } else {
+                            if (VeronaFolder::deleteOldVersion($veronaModule->id)) {
                                 if (!rename($tempFilename, $targetFilename)) {
                                     $myReturn = 'e:Interner Fehler: Konnte Datei nicht in Zielordner verschieben (' . $targetFilename . ').';
                                     unlink($tempFilename);
                                 } else {
                                     $myReturn = 'OK';
                                 }
+                            } else {
+                                $myReturn = 'e:Interner Fehler: Konnte alte Datei nicht löschen.';
+                                $targetFilename = '';
+                                unlink($tempFilename);
                             }
                         } else {
                             $myReturn = 'e:Datei nicht als Verona-Modul erkannt: ' . $veronaModule->errorMessage;

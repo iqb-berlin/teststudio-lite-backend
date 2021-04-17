@@ -7,6 +7,7 @@ class VeronaFile {
     public $fileDate = 0;
     public $fileDateStr = 'n/a';
     public $filename = '';
+    public $filelink = '';
     public $version = '';
     public $veronaVersion = '';
     public $name = '';
@@ -18,6 +19,7 @@ class VeronaFile {
     public $errorMessage = '';
 
     public function __construct($fullFilename) {
+        $this->filelink = $fullFilename;
         $this->filename = basename($fullFilename);
         $this->fileDate = filemtime($fullFilename);
         if ($this->fileDate > 0) {
