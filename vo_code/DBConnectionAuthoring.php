@@ -62,26 +62,26 @@ class DBConnectionAuthoring extends DBConnection
     // returns the name of the workspace given by id
     // returns '' if not found
     // token is not refreshed
-    public function getWorkspaceName($workspace_id)
+    public function getWorkspaceData($workspace_id)
     {
-        $myreturn = '';
+        $myReturn = '';
         if ($this->pdoDBhandle != false) {
 
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.name FROM workspaces
-                    WHERE workspaces.id=:workspace_id');
+                'SELECT workspaces.id, workspaces.name as label FROM workspaces
+                    WHERE workspaces.id=:w');
 
             if ($sql->execute(array(
-                ':workspace_id' => $workspace_id))) {
+                ':w' => $workspace_id))) {
 
                 $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
-                    $myreturn = $data['name'];
+                    $myReturn = $data;
                 }
             }
         }
 
-        return $myreturn;
+        return $myReturn;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
