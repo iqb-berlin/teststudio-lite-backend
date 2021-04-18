@@ -8,25 +8,26 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
-		require_once('../vo_code/DBConnection.php');
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
 		// *****************************************************************
 
-		$myreturn = [];
+		$myreturn = '';
 
 		$myerrorcode = 503;
 
-		$myDBConnection = new DBConnection();
+		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
 
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
+			$myWorkspace = $data["ws"];
 			if (isset($myToken)) {
-				if ($myDBConnection->isSuperAdmin($myToken)) {
+				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
-					require_once('../vo_code/ItemAuthoringToolsFactory.php');
-					$myreturn = ItemAuthoringToolsFactory::getItemAuthoringToolsList(false);
+					$myUnitId = $data["u"];
+					$myreturn = $myDBConnection->getUnitDefinition($myUnitId);
 				}
 			}
 		}        

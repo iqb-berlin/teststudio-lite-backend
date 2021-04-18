@@ -27,8 +27,13 @@
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
 					$myId = $data["u"];
-					$myToolId = $data["ati"];
-					$myreturn = $myDBConnection->setUnitAuthoringTool($myId, $myToolId);
+					$myKey = $data["k"];
+					$myLabel = $data["l"];
+					$myDescription = $data["d"];
+                    $player = $data["p"];
+                    $editor = $data["e"];
+					$myreturn = $myDBConnection->setUnitMetadata($myId, $myKey, $myLabel,
+                        $myDescription, $editor, $player);
 				}
 			}
 		}        

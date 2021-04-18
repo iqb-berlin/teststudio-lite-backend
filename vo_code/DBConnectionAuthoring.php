@@ -224,32 +224,29 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function getUnitProperties($wsId, $unitId)
+    public function getUnitMetadata($unitId)
     {
         $myreturn = [];
-        if (($this->pdoDBhandle != false) and ($wsId > 0)) {
+        if (($this->pdoDBhandle != false) and ($unitId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT units.id, units.key, units.label, units.description, 
-                    units.lastchanged, units.authoringtool_id as authoringtoolId,
+                    units.lastchanged as lastChanged, units.authoringtool_id as editorId,
                     units.player_id as playerId FROM units
-                    WHERE units.id =:id and units.workspace_id=:ws');
+                    WHERE units.id =:u');
 
             if ($sql->execute(array(
-                ':ws' => $wsId,
-                ':id' => $unitId))) {
+                ':u' => $unitId))) {
 
                 $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
-                    setlocale(LC_TIME, "de_DE");
-                    $myreturn['lastchangedStr'] = strftime("%d.%m.%Y %H:%M", strtotime($data['lastchanged']));
-                    // $myreturn['lastchangedStr'] = strftime('%x', $data['lastchanged']);
                 }
             }
         }
         return $myreturn;
     }
 
+    // todo delete
     public function getUnitDesignData($wsId, $unitId)
     {
         $myreturn = [];
@@ -265,6 +262,25 @@ class DBConnectionAuthoring extends DBConnection
                 $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
+                }
+            }
+        }
+        return $myreturn;
+    }
+
+    public function getUnitDefinition($unitId)
+    {
+        $myreturn = '';
+        if (($this->pdoDBhandle != false) and ($unitId > 0)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'SELECT units.def FROM units WHERE units.id =:u');
+
+            if ($sql->execute(array(
+                ':u' => $unitId))) {
+
+                $data = $sql->fetch(PDO::FETCH_ASSOC);
+                if ($data != false) {
+                    $myreturn = $data['def'];
                 }
             }
         }
@@ -332,39 +348,40 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function changeUnitProps($myId, $myKey, $myLabel, $myDescription)
+    public function setUnitMetadata($myId, $myKey, $myLabel, $myDescription, $editor, $player)
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET key =:key, label=:label, description=:description, lastchanged=:now
-                WHERE id =:id');
+                SET key=:k, label=:l, description=:d, lastchanged=:now, authoring_id=:e, player_id=:p
+                WHERE id =:u');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => $myId,
-                ':key' => $myKey,
-                ':label' => $myLabel,
-                ':description' => $myDescription,
+                ':u' => $myId,
+                ':k' => $myKey,
+                ':l' => $myLabel,
+                ':d' => $myDescription,
+                ':e' => $editor,
+                ':p' => $player,
                 ':now' => date('Y-m-d G:i:s', time())
             ));
         }
         return $myreturn;
     }
 
-    public function setUnitAuthoringTool($myId, $myTool)
+    public function setUnitEditor($unitId, $editorId)
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET authoringtool_id =:at, player_id=:pl, lastchanged=:now
-                WHERE id =:id');
+                SET editor_id =:e, lastchanged=:now
+                WHERE id =:u');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => $myId,
-                ':at' => $myTool,
-                ':pl' => '',
+                ':u' => $unitId,
+                ':e' => $editorId,
                 ':now' => date('Y-m-d G:i:s', time())
             ));
         }

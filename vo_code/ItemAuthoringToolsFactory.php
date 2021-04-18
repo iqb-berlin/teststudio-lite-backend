@@ -1,4 +1,5 @@
 <?php
+// todo delete file
 
 class ResourceFile {
     public static $sizes = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');

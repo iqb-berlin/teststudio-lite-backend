@@ -1,4 +1,4 @@
-<?php 
+<?php
 // www.IQB.hu-berlin.de
 // Bărbulescu, Stroescu, Mechtel
 // 2018
@@ -8,30 +8,29 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
-		require_once('../vo_code/DBConnection.php');
+		// *****************************************************************
 
-		// Authorisation
+		$myreturn = [];
+
 		$myerrorcode = 503;
-		$myreturn = '';
 
-		$myDBConnection = new DBConnection();
+		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
+
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$authoringIdOld = $data["old_i"];
-			$authoringIdNew = $data["new_i"];
-			$authoringName = $data["n"];
-
+			$myWorkspace = $data["ws"];
 			if (isset($myToken)) {
-				if ($myDBConnection->isSuperAdmin($myToken)) {
+				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
-					require_once('../vo_code/ItemAuthoringToolsFactory.php');
-					$myreturn = ItemAuthoringToolsFactory::renameItemAuthoringTool($authoringIdOld, $authoringIdNew, $authoringName);
+					$myUnitId = $data["u"];
+					$myreturn = $myDBConnection->getUnitMetadata($myUnitId);
 				}
 			}
-		}
+		}        
 		unset($myDBConnection);
 
 		if ($myerrorcode > 0) {

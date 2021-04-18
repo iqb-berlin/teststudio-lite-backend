@@ -56,4 +56,21 @@ class VeronaFolder
         }
         return $myReturn;
     }
+
+    static function getModuleHtml(string $id): bool {
+        $myFolder = VeronaFolder::$location;
+        if (file_exists($myFolder)) {
+            $myDir = opendir($myFolder);
+            while (($entry = readdir($myDir)) !== false) {
+                $fullFilename = $myFolder . '/' . $entry;
+                if (is_file($fullFilename)) {
+                    $veronaFile = new VeronaFile($fullFilename);
+                    if ($veronaFile->id == $id) {
+                        return file_get_contents($fullFilename);
+                    }
+                }
+            }
+        }
+        return '';
+    }
 }
