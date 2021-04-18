@@ -33,7 +33,7 @@
 					$myReturn['editors'] = [];
 					$myReturn['players'] = [];
 					foreach ($allModules as $module) {
-						if ($module->isEditor) {
+						if ($module['isEditor']) {
 							$myReturn['editors'] += [$module['id'] => [
 								'label' => $module['label'],
 								'html' => ''
