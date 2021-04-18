@@ -353,7 +353,7 @@ class DBConnectionAuthoring extends DBConnection
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET key=:k, label=:l, description=:d, lastchanged=:now, authoring_id=:e, player_id=:p
+                SET key=:k, label=:l, description=:d, lastchanged=:now, authoringtool_id=:e, player_id=:p
                 WHERE id =:u');
 
         if ($sql_update != false) {
