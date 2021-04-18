@@ -34,15 +34,15 @@
 					$myReturn['players'] = [];
 					foreach ($allModules as $module) {
 						if ($module->isEditor) {
-							$myReturn['editors'][$module->id] = array(
+							$myReturn['editors'] += [$module->id => [
 								'label' => $module->label,
-								'html' => '',
-							);
+								'html' => ''
+							]];
 						} else {
-							$myReturn['players'][$module->id] = array(
+							$myReturn['players'] += [$module->id => [
 								'label' => $module->label,
-								'html' => '',
-							);
+								'html' => ''
+							]];
 						}
 					}
 				}
