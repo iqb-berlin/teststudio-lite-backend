@@ -240,13 +240,12 @@ class DBConnectionAuthoring extends DBConnection
                 $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
-                    $myreturn['ts_pdo'] = $data['lastchanged'];
                     try {
-                        $myreturn['ts_php'] = new DateTimeImmutable($myreturn['ts_pdo']);
-                        $myreturn['ts_unix'] = $myreturn['ts_php']->getTimestamp();
+                        $pdo_timestamp = $data['lastchanged'];
+                        $php_datetime = new DateTimeImmutable($pdo_timestamp);
+                        $myreturn['lastchanged'] = $php_datetime->getTimestamp();
                     } catch (Exception $e) {
-                        $myreturn['ts_php'] = $e->getMessage();
-                        $myreturn['ts_unix'] = 0;
+                        $myreturn['lastchanged'] = 0;
                     }
                 }
             }
