@@ -57,27 +57,20 @@ class VeronaFolder
         return $myReturn;
     }
 
-    static function getModuleHtml(string $id): array {
+    static function getModuleHtml(string $id): string {
         $myFolder = VeronaFolder::$location;
-        $returnData = [];
-        $returnData['module'] = $id;
-        $returnData['checked_files'] = [];
         if (file_exists($myFolder)) {
-            $returnData['folder'] = $myFolder;
             $myDir = opendir($myFolder);
             while (($entry = readdir($myDir)) !== false) {
                 $fullFilename = $myFolder . '/' . $entry;
-                array_push($returnData['checked_files'], $fullFilename);
-                $returnData['filename'] = $fullFilename;
                 if (is_file($fullFilename)) {
                     $veronaFile = new VeronaFile($fullFilename);
                     if ($veronaFile->id == $id) {
-                        $returnData['module_html'] = file_get_contents($fullFilename);
-                        return $returnData;
+                        return file_get_contents($fullFilename);
                     }
                 }
             }
         }
-        return $returnData;
+        return '';
     }
 }
