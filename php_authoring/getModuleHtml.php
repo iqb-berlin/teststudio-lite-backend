@@ -10,6 +10,7 @@
 	} else {
 		require_once('../vo_code/VeronaFolder.class.php');
         $data = json_decode(file_get_contents('php://input'), true);
-        $myreturn = VeronaFolder::getModuleHtml($data["m"]);
+        $myreturn = [];
+        $myreturn['p'] = VeronaFolder::getModuleHtml($data["m"]);
         echo(json_encode($myreturn));
 	}
