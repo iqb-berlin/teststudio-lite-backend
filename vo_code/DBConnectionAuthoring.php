@@ -230,8 +230,8 @@ class DBConnectionAuthoring extends DBConnection
         if (($this->pdoDBhandle != false) and ($unitId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT units.id, units.key, units.label, units.description, 
-                    units.lastchanged as lastChanged, units.authoringtool_id as editorId,
-                    units.player_id as playerId FROM units
+                    units.lastchanged as lastchanged, units.authoringtool_id as editorid,
+                    units.player_id as playerid FROM units
                     WHERE units.id =:u');
 
             if ($sql->execute(array(
@@ -240,6 +240,14 @@ class DBConnectionAuthoring extends DBConnection
                 $data = $sql->fetch(PDO::FETCH_ASSOC);
                 if ($data != false) {
                     $myreturn = $data;
+                    $myreturn['ts_pdo'] = $data['lastchange'];
+                    try {
+                        $myreturn['ts_php'] = new DateTimeImmutable($myreturn['ts_pdo']);
+                        $myreturn['ts_unix'] = $myreturn['ts_php']->getTimestamp();
+                    } catch (Exception $e) {
+                        $myreturn['ts_php'] = $e->getMessage();
+                        $myreturn['ts_unix'] = 0;
+                    }
                 }
             }
         }
