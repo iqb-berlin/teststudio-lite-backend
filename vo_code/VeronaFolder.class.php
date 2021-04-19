@@ -57,7 +57,7 @@ class VeronaFolder
         return $myReturn;
     }
 
-    static function getModuleHtml(string $id): bool {
+    static function getModuleHtml(string $id): array {
         $myFolder = VeronaFolder::$location;
         if (file_exists($myFolder)) {
             $myDir = opendir($myFolder);
@@ -66,11 +66,14 @@ class VeronaFolder
                 if (is_file($fullFilename)) {
                     $veronaFile = new VeronaFile($fullFilename);
                     if ($veronaFile->id == $id) {
-                        return file_get_contents($fullFilename);
+                        $returnData = [];
+                        $returnData['filename'] = $fullFilename;
+                        $returnData['module'] = file_get_contents($fullFilename);
+                        return $returnData;
                     }
                 }
             }
         }
-        return '';
+        return [];
     }
 }
