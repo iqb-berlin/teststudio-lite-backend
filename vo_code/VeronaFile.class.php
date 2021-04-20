@@ -43,7 +43,7 @@ class VeronaFile {
 
         $meta['name'] = $metaElement->getAttribute('content');
         $meta['version'] = $metaElement->getAttribute('data-version');
-        $meta['type'] = $metaElement->getAttribute('data-type');
+        $meta['module-type'] = $metaElement->getAttribute('data-module-type');
         $meta['verona-version'] = $metaElement->getAttribute('data-api-version');
         $meta['repository-url'] = $metaElement->getAttribute('data-repository-url');
 
