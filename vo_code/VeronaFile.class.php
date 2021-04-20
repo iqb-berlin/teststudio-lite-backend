@@ -56,7 +56,7 @@ class VeronaFile {
             $versionMatches = null;
             $regexReturn = preg_match_all('/\d+/', $meta['version'], $versionMatches);
             if ($regexReturn && (count($versionMatches) > 0) && (count($versionMatches[0]) > 2)) {
-                if ($meta['type'] == 'verona-editor') {
+                if ($meta['module-type'] == 'verona-editor') {
                     $this->isEditor = true;
                 } else {
                     // players do not carry type attribute up to verona version 3.0
