@@ -395,18 +395,17 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function setUnitDefinition($myId, $myUnitdef, $playerId)
+    public function setUnitDefinition($unitId, $myUnitdef)
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET def =:ud, player_id=:pl, lastchanged=:now
+                SET def =:ud, lastchanged=:now
                 WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => $myId,
-                ':pl' => $playerId,
+                ':id' => $unitId,
                 ':ud' => $myUnitdef,
                 ':now' => date('Y-m-d G:i:s', time())
             ));

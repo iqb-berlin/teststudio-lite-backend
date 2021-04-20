@@ -28,8 +28,7 @@
 					$myerrorcode = 0;
 					$myId = $data["u"];
 					$myUnitdef = $data["ud"];
-					$myUnitPlayerId = $data["pl"];
-					$myreturn = $myDBConnection->setUnitDefinition($myId, $myUnitdef, $myUnitPlayerId);
+					$myreturn = $myDBConnection->setUnitDefinition($myId, $myUnitdef);
 				}
 			}
 		}        
