@@ -76,15 +76,15 @@ class VeronaFile {
         if( $jsonScripts->length > 0 ) {
             $json = trim( $jsonScripts->item(0)->nodeValue );
             $data = json_decode( $json, true );
-            // $metadata['title'] = $data['name'][$lang];
-            // if (!$metadata['title']) $metadata['title'] = $data['name']['en'];
+            $metadata['title'] = $data['name'][$lang];
+            if (!$metadata['title']) $metadata['title'] = $data['name']['en'];
             $metadata['name'] = $data['@id'];
             $metadata['version'] = $data['version'];
             $metadata['module-type'] = $data['@type'];
             $metadata['verona-version'] = $data['api-version'];
-            // $metadata['description'] = $data['description'][$lang];
-            // if (!$metadata['description']) $metadata['description'] = $data['description']['en'];
-            // $metadata['repository-url'] = $data['repository']['url'];
+            $metadata['description'] = $data['description'][$lang];
+            if (!$metadata['description']) $metadata['description'] = $data['description']['en'];
+            $metadata['repository-url'] = $data['repository']['url'];
         } else {
             $titleElements = $document->getElementsByTagName('title');
             if (count($titleElements) > 0) {
