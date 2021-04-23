@@ -75,7 +75,7 @@ class VeronaFile {
         $jsonScripts = $xpath->query( '//script[@type="application/ld+json"]' );
         if( $jsonScripts->length > 0 ) {
             $json = trim( $jsonScripts->item(0)->nodeValue );
-            $data = json_decode( $json );
+            $data = json_decode( $json, true );
             // $metadata['title'] = $data['name'][$lang];
             // if (!$metadata['title']) $metadata['title'] = $data['name']['en'];
             $metadata['name'] = $data['@id'];
