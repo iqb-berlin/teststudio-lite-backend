@@ -98,8 +98,8 @@ class VeronaFile {
                         $metadata['name'] = $metaElement->getAttribute('content');
                         $metadata['version'] = $metaElement->getAttribute('data-version');
                         $metadata['module-type'] = $metaElement->getAttribute('data-module-type');
+                        if ($metadata['module-type']) $metadata['module-type'] = substr($metadata['module-type'], 7);
                         $metadata['verona-version'] = $metaElement->getAttribute('data-api-version');
-                        if ($metadata['verona-version']) $metadata['verona-version'] = substr($metadata['verona-version'], 7);
                         $metadata['repository-url'] = $metaElement->getAttribute('data-repository-url');
                     }
                 }
