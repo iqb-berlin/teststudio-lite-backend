@@ -20,7 +20,7 @@ class VeronaFolder
                             'name' => $veronaFile->name,
                             'label' => $veronaFile->label,
                             'version' => $veronaFile->version,
-                            'veronaVersion' => $veronaFile->veronaVersion,
+                            'veronaVersion' => $veronaFile->apiVersion,
                             'filename' => $veronaFile->filename,
                             'filelink' => basename(VeronaFolder::$location) . '/' . $veronaFile->filename,
                             'filesize' => $veronaFile->size,

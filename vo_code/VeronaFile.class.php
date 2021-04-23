@@ -8,8 +8,9 @@ class VeronaFile {
     public $fileDateStr = 'n/a';
     public $filename = '';
     public $version = '';
-    public $veronaVersion = '';
+    public $apiVersion = '';
     public $name = '';
+    public $description = '';
     public $isPlayer = false;
     public $isEditor = false;
     public $label = '';
@@ -39,11 +40,11 @@ class VeronaFile {
             $this->errorMessage = 'meta-information for this player not found.';
             return;
         }
-        if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
+        if ($meta['apiVersion'] && $meta['version'] && $meta['name']) {
             $versionMatches = null;
             $regexReturn = preg_match_all('/\d+/', $meta['version'], $versionMatches);
             if ($regexReturn && (count($versionMatches) > 0) && (count($versionMatches[0]) > 2)) {
-                if ($meta['module-type'] == 'editor') {
+                if ($meta['moduleType'] == 'editor') {
                     $this->isEditor = true;
                 } else {
                     // players do not carry type attribute up to verona version 3.0
@@ -51,9 +52,10 @@ class VeronaFile {
                 }
                 $this->name = strtolower(trim($meta['name']));
                 $this->version = strtolower(trim($meta['version']));
-                $this->veronaVersion = strtolower(trim($meta['verona-version']));
+                $this->apiVersion = strtolower(trim($meta['apiVersion']));
                 $this->id = $this->name . '@' . $versionMatches[0][0] . '.' . $versionMatches[0][1];
                 $this->label = $meta['title'] . ' v' . $versionMatches[0][0] . '.' . $versionMatches[0][1];
+                $this->description = $meta['description'];
             } else {
                 $this->errorMessage = '`data-version` attribute not semver format as expected (' . $meta['version'] . ').';
             }
@@ -68,9 +70,8 @@ class VeronaFile {
         $metadata['name'] = '';
         $metadata['description'] = '';
         $metadata['version'] = '';
-        $metadata['module-type'] = '';
-        $metadata['verona-version'] = '';
-        $metadata['repository-url'] = '';
+        $metadata['moduleType'] = '';
+        $metadata['apiVersion'] = '';
         $xpath = new DOMXpath($document);
         $jsonScripts = $xpath->query( '//script[@type="application/ld+json"]' );
         if( $jsonScripts->length > 0 ) {
@@ -80,11 +81,10 @@ class VeronaFile {
             if (!$metadata['title']) $metadata['title'] = $data['name']['en'];
             $metadata['name'] = $data['@id'];
             $metadata['version'] = $data['version'];
-            $metadata['module-type'] = $data['@type'];
-            $metadata['verona-version'] = $data['api-version'];
+            $metadata['moduleType'] = $data['@type'];
+            $metadata['apiVersion'] = $data['apiVersion'];
             $metadata['description'] = $data['description'][$lang];
             if (!$metadata['description']) $metadata['description'] = $data['description']['en'];
-            $metadata['repository-url'] = $data['repository']['url'];
         } else {
             $titleElements = $document->getElementsByTagName('title');
             if (count($titleElements) > 0) {
@@ -97,10 +97,9 @@ class VeronaFile {
                     if ($metaElement->getAttribute('name') == 'application-name') {
                         $metadata['name'] = $metaElement->getAttribute('content');
                         $metadata['version'] = $metaElement->getAttribute('data-version');
-                        $metadata['module-type'] = $metaElement->getAttribute('data-module-type');
-                        if ($metadata['module-type']) $metadata['module-type'] = substr($metadata['module-type'], 7);
-                        $metadata['verona-version'] = $metaElement->getAttribute('data-api-version');
-                        $metadata['repository-url'] = $metaElement->getAttribute('data-repository-url');
+                        $metadata['moduleType'] = $metaElement->getAttribute('data-module-type');
+                        if ($metadata['moduleType']) $metadata['moduleType'] = substr($metadata['moduleType'], 7);
+                        $metadata['apiVersion'] = $metaElement->getAttribute('data-api-version');
                     }
                 }
             }
