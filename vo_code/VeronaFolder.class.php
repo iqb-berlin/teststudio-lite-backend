@@ -28,7 +28,8 @@ class VeronaFolder
                             'fileDatetime' => $veronaFile->fileDate,
                             'fileDatetimeStr' => $veronaFile->fileDateStr,
                             'isPlayer' => $veronaFile->isPlayer,
-                            'isEditor' => $veronaFile->isEditor
+                            'isEditor' => $veronaFile->isEditor,
+                            'description' => $veronaFile->description
                         ]);
                     } else {
                         array_push($myReturn, [
