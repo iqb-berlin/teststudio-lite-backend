@@ -29,34 +29,21 @@ class VeronaFile {
         $fileContent = file_get_contents($fullFilename);
         $document = new DOMDocument();
         $document->loadHTML($fileContent, LIBXML_NOERROR);
-        $meta = [];
-        $meta['title'] = VeronaFile::getMetaTitle($document);
-        $metaElement = VeronaFile::getMetaElement($document);
-        if (!$metaElement) {
-            $this->errorMessage = 'No meta-information for this player found.';
-            return;
-        }
-        if (!$metaElement->getAttribute('content')) {
-            $this->errorMessage = 'Missing `content` attribute in meta-information!';
-            return;
-        }
-
-        $meta['name'] = $metaElement->getAttribute('content');
-        $meta['version'] = $metaElement->getAttribute('data-version');
-        $meta['module-type'] = $metaElement->getAttribute('data-module-type');
-        $meta['verona-version'] = $metaElement->getAttribute('data-api-version');
-        $meta['repository-url'] = $metaElement->getAttribute('data-repository-url');
-
+        $meta = VeronaFile::getMetadata($document, 'de');
         foreach ($meta as $key => $value) {
             if (!$value) {
                 unset($meta[$key]);
             }
         }
+        if (!$meta['title']) {
+            $this->errorMessage = 'meta-information for this player not found.';
+            return;
+        }
         if ($meta['verona-version'] && $meta['version'] && $meta['name']) {
             $versionMatches = null;
             $regexReturn = preg_match_all('/\d+/', $meta['version'], $versionMatches);
             if ($regexReturn && (count($versionMatches) > 0) && (count($versionMatches[0]) > 2)) {
-                if ($meta['module-type'] == 'verona-editor') {
+                if ($meta['module-type'] == 'editor') {
                     $this->isEditor = true;
                 } else {
                     // players do not carry type attribute up to verona version 3.0
@@ -75,24 +62,50 @@ class VeronaFile {
         }
     }
 
-    private static function getMetaElement(DOMDocument $document): ?DOMElement {
-
-        $metaElements = $document->getElementsByTagName('meta');
-        foreach ($metaElements as $metaElement) { /* @var $metaElement DOMElement */
-            if ($metaElement->getAttribute('name') == 'application-name') {
-                return $metaElement;
+    private static function getMetadata(DOMDocument $document, string $lang): array {
+        $metadata = [];
+        $metadata['title'] = '';
+        $metadata['name'] = '';
+        $metadata['description'] = '';
+        $metadata['version'] = '';
+        $metadata['module-type'] = '';
+        $metadata['verona-version'] = '';
+        $metadata['repository-url'] = '';
+        $xpath = new DOMXpath($document);
+        $jsonScripts = $xpath->query( '//script[@type="application/ld+json"]' );
+        if( $jsonScripts->length > 0 ) {
+            $json = trim( $jsonScripts->item(0)->nodeValue );
+            $data = json_decode( $json );
+            $metadata['title'] = $data['name'][$lang];
+            if (!$metadata['title']) $metadata['title'] = $data['name']['en'];
+            $metadata['name'] = $data['@id'];
+            $metadata['version'] = $data['version'];
+            $metadata['module-type'] = $data['@type'];
+            $metadata['verona-version'] = $data['api-version'];
+            $metadata['description'] = $data['description'][$lang];
+            if (!$metadata['description']) $metadata['description'] = $data['description']['en'];
+            $metadata['repository-url'] = $data['repository']['url'];
+        } else {
+            $titleElements = $document->getElementsByTagName('title');
+            if (count($titleElements) > 0) {
+                $titleElement = $titleElements[0];
+                $metadata['title'] = $titleElement->textContent;
+            }
+            $metaElements = $document->getElementsByTagName('meta');
+            if (count($metaElements) > 0) {
+                foreach ($metaElements as $metaElement) { /* @var $metaElement DOMElement */
+                    if ($metaElement->getAttribute('name') == 'application-name') {
+                        $metadata['name'] = $metaElement->getAttribute('content');
+                        $metadata['version'] = $metaElement->getAttribute('data-version');
+                        $metadata['module-type'] = $metaElement->getAttribute('data-module-type');
+                        $metadata['verona-version'] = $metaElement->getAttribute('data-api-version');
+                        if ($metadata['verona-version']) $metadata['verona-version'] = substr($metadata['verona-version'], 7);
+                        $metadata['repository-url'] = $metaElement->getAttribute('data-repository-url');
+                    }
+                }
             }
         }
-        return null;
-    }
-    private static function getMetaTitle(DOMDocument $document): string {
-
-        $titleElements = $document->getElementsByTagName('title');
-        if (!count($titleElements)) {
-            return '';
-        }
-        $titleElement = $titleElements[0]; /* @var $titleElement DOMElement */
-        return $titleElement->textContent;
+        return $metadata;
     }
 }
 
