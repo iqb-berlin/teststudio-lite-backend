@@ -30,6 +30,11 @@ class VeronaFolder
                             'isPlayer' => $veronaFile->isPlayer,
                             'isEditor' => $veronaFile->isEditor
                         ]);
+                    } else {
+                        array_push($myReturn, [
+                            'filename' => $fullFilename,
+                            'error' => $veronaFile->errorMessage
+                        ]);
                     }
                 }
             }
