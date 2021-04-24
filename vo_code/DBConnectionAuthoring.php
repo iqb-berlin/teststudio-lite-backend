@@ -8,6 +8,97 @@ require_once('DBConnection.php');
 
 class DBConnectionAuthoring extends DBConnection
 {
+    private function fetchUnitById($unitId)
+    {
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT * FROM units WHERE id = :id'
+        );
+
+        $stmt->bindParam(':id', $unitId);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function fetchUnitKeyById($unitId)
+    {
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT key FROM units WHERE id = :id'
+        );
+        $stmt->bindParam(':id', $unitId);
+        $stmt->execute();
+
+        return $stmt->fetchColumn();
+    }
+
+    private function checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)
+    {
+        $key = strtolower(trim($unitKey));
+
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT count(*) FROM units WHERE workspace_id = :ws_id AND LOWER(key) = :key'
+        );
+        $stmt->execute(
+            array(
+                ':ws_id' => $workspaceId,
+                ':key' => $key
+            )
+        );
+
+        return $stmt->fetchColumn() == 0;
+    }
+
+
+    /**
+     * Creates an upload directory at the passed upload path
+     *
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @throws ErrorException with code 400, if upload directory already exists
+     */
+    private function createUploadDir(string $uploadPath): void
+    {
+        if (!file_exists($uploadPath)) {
+            if (!mkdir($uploadPath)) {
+                $message = "Upload directory could not be created.";
+                error_log($message);
+                throw new ErrorException($message, 400);
+            }
+        }
+    }
+
+    /**
+     * Reads an upload directory at the passed upload path and returns all files with the passed file type extension
+     * it contains.
+     *
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param string $metadataFileType <p>
+     * File type extension (default file pattern: '*.*')
+     * </p>
+     * @return array of files of passed file type
+     * @throws ErrorException with code 500, if upload directory does not exist or contains no files of passed file type
+     */
+    private function scanUploadDir(string $uploadPath, string $metadataFileType = "*"): array
+    {
+        if (!(file_exists($uploadPath) && is_dir($uploadPath))) {
+            $message = "Upload directory does not exist!";
+            error_log($message);
+            throw new ErrorException($message, 500);
+
+        } else {
+            $files = glob($uploadPath . "/*." . $metadataFileType);
+
+            if (count($files) == 0) {
+                $message = "No unit metadata file found in upload directory!";
+                error_log($message);
+                throw new ErrorException($message, 500);
+            }
+            return $files;
+        }
+    }
 
     public function getUnitListByWorkspace($wsId)
     {
@@ -84,62 +175,56 @@ class DBConnectionAuthoring extends DBConnection
         return $myReturn;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // adds new user if no user with the given name exists
-    // returns true if ok, false if admin-token not valid or user already exists
-    // token is refreshed via isSuperAdmin
-    public function addUnit($workspaceId, $key, $label, $sourceUnit)
+    public function addUnit($workspaceId, $unitKey, $unitLabel)
     {
-        $myreturn = false;
-        if ($sourceUnit == 0) {
-            $sql = $this->pdoDBhandle->prepare(
-                'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)');
-
-            if ($sql->execute(array(
-                ':workspace' => $workspaceId,
-                ':key' => $key,
-                ':label' => $label,
-                ':now' => date('Y-m-d G:i:s', time())
-            ))) {
-
-                $myreturn = true;
-            }
-        } else {
-            // look for unit properties
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT * FROM units
-                    WHERE units.id =:id and units.workspace_id=:ws');
-
-            if ($sql->execute(array(
-                ':ws' => $workspaceId,
-                ':id' => $sourceUnit))) {
-
-                $data = $sql->fetch(PDO::FETCH_ASSOC);
-                if ($data != false) {
-                    $sql = $this->pdoDBhandle->prepare(
-                        'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) 
-                            VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)');
-
-                    if ($sql->execute(array(
-                        ':workspace' => $workspaceId,
-                        ':key' => $key,
-                        ':label' => $label,
-                        ':now' => date('Y-m-d G:i:s', time()),
-                        ':description' => $data['description'],
-                        ':def' => $data['def'],
-                        ':atId' => $data['authoringtool_id'],
-                        ':pId' => $data['player_id'],
-                        ':defref' => $data['defref']
-                    ))) {
-
-                        $myreturn = true;
-                    }
-                }
-            }
-
+        if (!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
 
-        return $myreturn;
+        $sql = $this->pdoDBhandle->prepare(
+            'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)'
+        );
+
+        return $sql->execute(
+            array(
+                ':workspace' => $workspaceId,
+                ':key' => $unitKey,
+                ':label' => $unitLabel,
+                ':now' => date('Y-m-d G:i:s', time()
+                )
+            )
+        );
+    }
+
+    public function copyUnit($targetWorkspaceId, $targetUnitKey, $targetUnitLabel, $sourceUnitId)
+    {
+        if (!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $targetUnitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $targetWorkspaceId)", 406);
+        }
+
+        $sourceUnit = $this->fetchUnitById($sourceUnitId);
+        if (!$sourceUnit) {
+            return false;
+        } else {
+            $sql = $this->pdoDBhandle->prepare(
+                'INSERT INTO units (workspace_id, key, label, lastchanged, description, def, authoringtool_id, player_id, defref) ' .
+                'VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)'
+            );
+
+            return $sql->execute(
+                array(
+                    ':workspace' => $targetWorkspaceId,
+                    ':key' => $targetUnitKey,
+                    ':label' => $targetUnitLabel,
+                    ':now' => date('Y-m-d G:i:s', time()),
+                    ':description' => $sourceUnit['description'],
+                    ':def' => $sourceUnit['def'],
+                    ':atId' => $sourceUnit['authoringtool_id'],
+                    ':pId' => $sourceUnit['player_id'],
+                    ':defref' => $sourceUnit['defref']
+                )
+            );
+        }
     }
 
     public function deleteUnits($workspaceId, $unitIds)
@@ -158,25 +243,32 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function moveUnits($workspaceId, $unitIds, $targetWorkspace)
+    public function moveUnits($targetWorkspaceId, $unitIds)
     {
-        $update_count = 0;
-        foreach ($unitIds as $uid) {
-            $sql_update = $this->pdoDBhandle->prepare(
-                'UPDATE units
-                    SET workspace_id =:ws
-                    WHERE id =:id');
+        $unmovableUnits = array();
 
-            if ($sql_update != false) {
-                if ($sql_update->execute(array(
-                    ':ws' => $targetWorkspace,
-                    ':id' => $uid))) {
-                    $update_count += 1;
+        foreach ($unitIds as $unitId) {
+            $unitKey = $this->fetchUnitKeyById($unitId);
+
+            if (!empty($unitKey)) {
+                if (!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $unitKey)) {
+                    array_push($unmovableUnits, $this->fetchUnitById($unitId));
+
+                } else {
+                    $sql_update = $this->pdoDBhandle->prepare(
+                        'UPDATE units SET workspace_id =:ws WHERE id =:id'
+                    );
+                    $sql_update->execute(
+                        array(
+                            ':ws' => $targetWorkspaceId,
+                            ':id' => $unitId
+                        )
+                    );
                 }
             }
         }
 
-        return $update_count === count($unitIds);
+        return $unmovableUnits;
     }
 
     // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
@@ -355,25 +447,31 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function setUnitMetadata($myId, $myKey, $myLabel, $myDescription, $editor, $player)
+    public function changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription)
     {
         $myreturn = false;
+        $newTrimmedKey = trim($unitKey);
+        $originUnitKey = $this->fetchUnitKeyById($unitId);
+
+        if (strtolower($originUnitKey) !== strtolower($newTrimmedKey) && !$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
+            throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
+        }
+
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-                SET key=:k, label=:l, description=:d, lastchanged=:now, authoringtool_id=:e, player_id=:p
-                WHERE id =:u');
+            SET key =:key, label=:label, description=:description, lastchanged=:now
+            WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':u' => $myId,
-                ':k' => $myKey,
-                ':l' => $myLabel,
-                ':d' => $myDescription,
-                ':e' => $editor,
-                ':p' => $player,
+                ':id' => $unitId,
+                ':key' => $newTrimmedKey,
+                ':label' => $unitLabel,
+                ':description' => $unitDescription,
                 ':now' => date('Y-m-d G:i:s', time())
             ));
         }
+
         return $myreturn;
     }
 
@@ -413,7 +511,7 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function setUnitPlayer($unitId, $playerId)
+    public function setUnitPlayer($unitId, $playerId): bool
     {
         $stmt = $this->pdoDBhandle->prepare('UPDATE units SET player_id= :pl, lastchanged= :now WHERE id = :id');
         $params = array(
@@ -423,6 +521,317 @@ class DBConnectionAuthoring extends DBConnection
 
         return $stmt->execute($params);
     }
+
+    /**
+     * @param array $fileUploadMetaData <p>
+     * Array of file upload metadata
+     * </p>
+     * @throws ErrorException if file upload has failed
+     */
+    public function handleFileUpload(array $fileUploadMetaData)
+    {
+        if (empty($fileUploadMetaData) || $fileUploadMetaData['error'] != UPLOAD_ERR_OK) {
+            $fileUploadError = $fileUploadMetaData['error'];
+            error_log("fileError = $fileUploadError");
+
+            $errorMessage = 'File Upload failed.';
+            $errorCode = 400;
+
+            switch ($fileUploadError) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $errorMessage = 'The file exceeds the maximum permitted size.';
+                    $errorCode = 413;
+                    break;
+
+                case UPLOAD_ERR_NO_FILE:
+                    $errorMessage = 'No file selected for upload.';
+                    break;
+
+                default:
+                    break;
+            }
+
+            throw new ErrorException($errorMessage, $errorCode);
+        }
+
+        error_log("filename = " . $fileUploadMetaData['name']);
+        error_log("fileType = " . $fileUploadMetaData['type']);
+        error_log("fileTmpName = " . $fileUploadMetaData['tmp_name']);
+        error_log("fileSize = " . $fileUploadMetaData['size']);
+    }
+
+    /**
+     * @param string $filename <p>
+     * Path to the tested file.
+     * </p>
+     * @param array $allowedMimeTypes <p>
+     * Array of allowed key value pairs of MIME content type (key) and file type (value)
+     * </p>
+     * @return false|string $mimeType the allowed content type in MIME format, like
+     * text/plain or application/octet-stream.
+     * @throws ErrorException with code 415, if the detected MIME content type is not allowed.
+     */
+    public function verifyMimeType(string $filename, array $allowedMimeTypes)
+    {
+        $mimeType = mime_content_type($filename);
+        error_log("mimeType = $mimeType");
+
+        if (!isset($allowedMimeTypes[$mimeType])) {
+            throw new ErrorException('File upload failed due to not allowed mime type: ' . $mimeType, 415);
+        }
+
+        return $mimeType;
+    }
+
+    /**
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param string $uploadFileTmpName <p>
+     * Upload file tmp name
+     * </p>
+     * @param array $allowedMimeTypes <p>
+     * Array of allowed key value pairs of MIME content type (key) and file type (value)
+     * </p>
+     * @throws ErrorException <p>
+     * with code 400, if the zip file is corrupt or cannot be opened
+     * </p><p>
+     * with code 415, if the detected file extension of an archive entry is not allowed.
+     * </p>
+     */
+    function extractZipArchive(string $uploadPath, string $uploadFileTmpName, array $allowedMimeTypes)
+    {
+        $zip = new ZipArchive;
+        if ($zip->open($uploadFileTmpName) === true) {
+
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $archiveEntryName = $zip->getNameIndex($i);
+                $fileInfo = pathinfo($archiveEntryName);
+
+                error_log("archiveEntryName = " . $archiveEntryName);
+                error_log("filename = " . $fileInfo['filename']);
+                error_log("dirname = " . $fileInfo['dirname']);
+                error_log("basename = " . $fileInfo['basename']);
+                error_log("extension = " . $fileInfo['extension']);
+
+                $sourcePath = "zip://" . $uploadFileTmpName . "#" . $archiveEntryName;
+                $targetPath = $uploadPath . $fileInfo['basename'];
+
+                error_log("sourcePath = $sourcePath");
+                error_log("targetPath = $targetPath");
+
+                $allowedFileTypes = array_values($allowedMimeTypes);
+                error_log("Allowed file types:\n" . print_r($allowedFileTypes, true));
+
+                if (!in_array($fileInfo['extension'], $allowedFileTypes)) {
+                    throw new ErrorException(
+                        'File upload failed due to not allowed file type: ' . $fileInfo['extension'], 415);
+                }
+                if ($fileInfo['extension'] == 'zip') {
+                    error_log("zip in zip");
+                    //$this->extractZipArchive($uploadPath, $sourcePath, $allowedMimeTypes);
+                }
+                //else {
+                $this->createUploadDir($uploadPath);
+
+                copy($sourcePath, $targetPath);
+                //}
+            }
+
+            $zip->close();
+        } else {
+            throw new ErrorException('Could not extract Zip-File', 400);
+        }
+
+        unlink($uploadFileTmpName);
+    }
+
+
+    /**
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param array $phpUploadMetaData <p>
+     * Array of file upload metadata
+     * </p>
+     * @throws ErrorException with code 409 if file already exists
+     */
+    function saveUnitFile(string $uploadPath, array $phpUploadMetaData)
+    {
+        $unitFilename = $uploadPath . $phpUploadMetaData['name'];
+
+        error_log("Save unit at '$unitFilename' ...");
+        error_log("uploadDir = $uploadPath");
+        error_log("filename = " . $phpUploadMetaData['name']);
+        error_log("fileType = " . $phpUploadMetaData['type']);
+        error_log("fileTmpName = " . $phpUploadMetaData['tmp_name']);
+        error_log("fileSize = " . $phpUploadMetaData['size']);
+
+        if (!file_exists($uploadPath)) {
+            mkdir($uploadPath);
+        }
+
+        if (!file_exists($unitFilename)) {
+            move_uploaded_file($phpUploadMetaData['tmp_name'], $unitFilename)
+                ? error_log("Unit saved!")
+                : error_log("Save failed!");
+        } else {
+            throw new ErrorException(
+                "Uploaded unit file '" . $phpUploadMetaData['name'] . "' already exists!",
+                409);
+        }
+    }
+
+    /**
+     * @param string $uploadPath
+     * @return array
+     * @throws ErrorException
+     */
+    public function fetchUnitImportData(string $uploadPath): array
+    {
+        $importData = array();
+        $metadataFiles = $this->scanUploadDir($uploadPath, "xml");
+
+        foreach ($metadataFiles as $metadataFile) {
+            $importData = $this->parseUnitMetadataFile($metadataFile, $uploadPath, $importData);
+        }
+
+        error_log("importData = " . print_r($importData, true));
+
+        return $importData;
+    }
+
+    /**
+     * @param $metadataFile
+     * @param string $uploadPath
+     * @param array $importData
+     * @return array
+     * @throws ErrorException
+     */
+    public function parseUnitMetadataFile($metadataFile, string $uploadPath, array $importData): array
+    {
+        $xml = simplexml_load_file($metadataFile);
+        $idNodes = $xml->xpath('/Unit/Metadata/Id');
+        $labelNodes = $xml->xpath('/Unit/Metadata/Label');
+        $descriptionNodes = $xml->xpath('/Unit/Metadata/Description');
+        $lastChangeNodes = $xml->xpath('/Unit/Metadata/Lastchange');
+        $definitionRefNodes = $xml->xpath('/Unit/DefinitionRef');
+        $definitionNodes = $xml->xpath('/Unit/Definition');
+
+        error_log("metadataFile = $metadataFile");
+        error_log("idNodes = " . print_r($idNodes, true));
+        error_log("labelNodes = " . print_r($labelNodes, true));
+        error_log("descriptionNodes = " . print_r($descriptionNodes, true));
+        error_log("lastChangeNodes = " . print_r($lastChangeNodes, true));
+        error_log("definitionRefNodes = " . print_r($definitionRefNodes, true));
+        error_log("definitionNodes = " . print_r($definitionNodes, true));
+
+        error_log("#idNodes = " . count($idNodes));
+        error_log("#labelNodes = " . count($labelNodes));
+        error_log("#descriptionNodes = " . count($descriptionNodes));
+        error_log("#lastChangeNodes = " . count($lastChangeNodes));
+        error_log("#definitionRefNodes = " . count($definitionRefNodes));
+        error_log("#definitionNodes = " . count($definitionNodes));
+
+        if (
+            count($idNodes) != 1 ||         // mandatory node
+            count($labelNodes) > 1 ||       // optional node
+            count($descriptionNodes) > 1 || // optional node
+            count($lastChangeNodes) > 1 ||  // optional node
+            (count($definitionNodes) != 1 && count($definitionRefNodes) != 1)   // mandatory optional nodes
+        ) {
+            $message = "Unit Metadata file $metadataFile is invalid!";
+            error_log($message);
+            throw new ErrorException($message, 400);
+
+        } else {
+            $key = (string)$idNodes[0];
+            $label = (string)$labelNodes[0];
+            $description = (string)$definitionNodes[0];
+            $lastChange = (string)$lastChangeNodes[0];
+            $editor = (string)$definitionNodes[0]['editor'];
+            $player = (string)$definitionNodes[0]['player'];
+            $type = (string)$definitionNodes[0]['type'];
+            $definition = (string)$definitionNodes[0];
+            error_log("key = " . print_r($key, true));
+            error_log("label = " . print_r($label, true));
+            error_log("description = " . print_r($description, true));
+            error_log("lastChange = " . print_r($lastChange, true));
+            error_log("editor = " . print_r($editor, true));
+            error_log("player = " . print_r($player, true));
+            error_log("type = " . print_r($type, true));
+            error_log("definition = " . print_r($definition, true));
+
+            if (count($definitionRefNodes) == 1) {
+                $editor = (string)$definitionRefNodes[0]['editor'];
+                $player = (string)$definitionRefNodes[0]['player'];
+                $type = (string)$definitionRefNodes[0]['type'];
+                $unitDefinitionFile = $uploadPath . '/' . $definitionRefNodes[0];
+
+                error_log("editor = $editor");
+                error_log("player = $player");
+                error_log("type = $type");
+                error_log("unitDefinitionFile = $unitDefinitionFile");
+
+                $definition = $this->loadUnitDefinitionFile($unitDefinitionFile);
+            }
+
+            $unit = array(
+                "key" => $key,
+                "label" => $label,
+                "description" => $description,
+                "editor" => $editor,
+                "player" => $player,
+                "lastChange" => $lastChange,
+                "def" => $definition);
+            error_log("unit = " . print_r($unit, true));
+
+            array_push($importData, $unit);
+        }
+
+        return $importData;
+    }
+
+    /**
+     * @param string $unitDefinitionFile
+     * @return int
+     * @throws ErrorException
+     */
+    public function loadUnitDefinitionFile(string $unitDefinitionFile): int
+    {
+        if (!file_exists($unitDefinitionFile)) {
+            $message = "Unit definition file does not exist.";
+            error_log($message);
+            throw new ErrorException($message, 400);
+
+        } else {
+            $definition = readfile($unitDefinitionFile);
+
+            if (!$definition) {
+                $message = "Could not read unit definition file $unitDefinitionFile!";
+                error_log($message);
+                throw new ErrorException($message, 400);
+            }
+
+            error_log("definition = " . print_r($definition, true));
+        }
+
+        return $definition;
+    }
+
+    /**
+     * @param string $workspaceId
+     * @param array $importData
+     * @throws Exception
+     */
+    public function saveUnitImportData(string $workspaceId, array $importData): void
+    {
+        foreach ($importData as $import) {
+            $this->addUnit($workspaceId, $import["key"], $import["label"]);
+        }
+    }
+
 }
 
 ?>

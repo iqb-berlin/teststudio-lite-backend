@@ -30,7 +30,7 @@
 					$myreturn = $myDBConnection->getUnitMetadata($myUnitId);
 				}
 			}
-		}        
+		}
 		unset($myDBConnection);
 
 		if ($myerrorcode > 0) {
