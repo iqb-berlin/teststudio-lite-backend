@@ -27,10 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
         $processId = $data["p"];
         $workspaceId = $data["ws"];
 
-        error_log("sessionToken = $sessionToken");
-        error_log("processId = $processId");
-        error_log("workspaceId = $workspaceId");
-
         if (empty($sessionToken) ||
             empty($processId) ||
             !$dbConnection->canAccessWorkspace($sessionToken, $workspaceId)
@@ -45,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                 $dbConnection->saveUnitImportData($workspaceId, $importData);
 
             } catch (Exception $exception) {
-                error_log($exception->getMessage());
+                error_log("failed upload: " . print_r($exception->getMessage(), true));
                 $errorCode = $exception->getCode();
             }
         }
@@ -56,8 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     if ($errorCode > 0) {
         http_response_code($errorCode);
     } else {
+        $return = true;
         echo(json_encode($return));
     }
 }
-
-?>

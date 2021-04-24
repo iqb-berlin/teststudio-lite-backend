@@ -185,7 +185,7 @@ class DBConnectionAuthoring extends DBConnection
             'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)'
         );
 
-        return $sql->execute(
+        $sql->execute(
             array(
                 ':workspace' => $workspaceId,
                 ':key' => $unitKey,
@@ -194,6 +194,7 @@ class DBConnectionAuthoring extends DBConnection
                 )
             )
         );
+        return $this->pdoDBhandle->lastInsertId();
     }
 
     public function copyUnit($targetWorkspaceId, $targetUnitKey, $targetUnitLabel, $sourceUnitId)
@@ -326,7 +327,7 @@ class DBConnectionAuthoring extends DBConnection
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT units.id, units.key, units.label, units.description, 
                     units.lastchanged as lastchanged, units.authoringtool_id as editorid,
-                    units.player_id as playerid FROM units
+                    units.player_id as playerid, units.defref as deftype FROM units
                     WHERE units.id =:u');
 
             if ($sql->execute(array(
@@ -450,28 +451,34 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription)
+    public function changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription,
+        $player, $editor, $defType)
     {
         $myreturn = false;
         $newTrimmedKey = trim($unitKey);
         $originUnitKey = $this->fetchUnitKeyById($unitId);
-
         if (strtolower($originUnitKey) !== strtolower($newTrimmedKey) && !$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
-
         $sql_update = $this->pdoDBhandle->prepare(
             'UPDATE units
-            SET key =:key, label=:label, description=:description, lastchanged=:now
+            SET key=:k,
+                label=:l,
+                authoringtool_id=:e,
+                description=:ds,
+                defref=:dt,
+                player_id=:p
             WHERE id =:id');
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => $unitId,
-                ':key' => $newTrimmedKey,
-                ':label' => $unitLabel,
-                ':description' => $unitDescription,
-                ':now' => date('Y-m-d G:i:s', time())
+                ':id' => strval($unitId),
+                ':e' => $editor,
+                ':k' => $newTrimmedKey,
+                ':l' => $unitLabel,
+                ':ds' => $unitDescription,
+                ':dt' => $defType,
+                ':p' => $player
             ));
         }
 
@@ -697,22 +704,18 @@ class DBConnectionAuthoring extends DBConnection
         $metadataFiles = $this->scanUploadDir($uploadPath, "xml");
 
         foreach ($metadataFiles as $metadataFile) {
-            $importData = $this->parseUnitMetadataFile($metadataFile, $uploadPath, $importData);
+            array_push($importData, $this->parseUnitMetadataFile($metadataFile, $uploadPath));
         }
-
-        error_log("importData = " . print_r($importData, true));
-
         return $importData;
     }
 
     /**
      * @param $metadataFile
      * @param string $uploadPath
-     * @param array $importData
      * @return array
      * @throws ErrorException
      */
-    public function parseUnitMetadataFile($metadataFile, string $uploadPath, array $importData): array
+    public function parseUnitMetadataFile($metadataFile, string $uploadPath): array
     {
         $xml = simplexml_load_file($metadataFile);
         $idNodes = $xml->xpath('/Unit/Metadata/Id');
@@ -721,21 +724,6 @@ class DBConnectionAuthoring extends DBConnection
         $lastChangeNodes = $xml->xpath('/Unit/Metadata/Lastchange');
         $definitionRefNodes = $xml->xpath('/Unit/DefinitionRef');
         $definitionNodes = $xml->xpath('/Unit/Definition');
-
-        error_log("metadataFile = $metadataFile");
-        error_log("idNodes = " . print_r($idNodes, true));
-        error_log("labelNodes = " . print_r($labelNodes, true));
-        error_log("descriptionNodes = " . print_r($descriptionNodes, true));
-        error_log("lastChangeNodes = " . print_r($lastChangeNodes, true));
-        error_log("definitionRefNodes = " . print_r($definitionRefNodes, true));
-        error_log("definitionNodes = " . print_r($definitionNodes, true));
-
-        error_log("#idNodes = " . count($idNodes));
-        error_log("#labelNodes = " . count($labelNodes));
-        error_log("#descriptionNodes = " . count($descriptionNodes));
-        error_log("#lastChangeNodes = " . count($lastChangeNodes));
-        error_log("#definitionRefNodes = " . count($definitionRefNodes));
-        error_log("#definitionNodes = " . count($definitionNodes));
 
         if (
             count($idNodes) != 1 ||         // mandatory node
@@ -749,51 +737,27 @@ class DBConnectionAuthoring extends DBConnection
             throw new ErrorException($message, 400);
 
         } else {
-            $key = (string)$idNodes[0];
-            $label = (string)$labelNodes[0];
-            $description = (string)$definitionNodes[0];
-            $lastChange = (string)$lastChangeNodes[0];
-            $editor = (string)$definitionNodes[0]['editor'];
-            $player = (string)$definitionNodes[0]['player'];
-            $type = (string)$definitionNodes[0]['type'];
-            $definition = (string)$definitionNodes[0];
-            error_log("key = " . print_r($key, true));
-            error_log("label = " . print_r($label, true));
-            error_log("description = " . print_r($description, true));
-            error_log("lastChange = " . print_r($lastChange, true));
-            error_log("editor = " . print_r($editor, true));
-            error_log("player = " . print_r($player, true));
-            error_log("type = " . print_r($type, true));
-            error_log("definition = " . print_r($definition, true));
-
-            if (count($definitionRefNodes) == 1) {
-                $editor = (string)$definitionRefNodes[0]['editor'];
-                $player = (string)$definitionRefNodes[0]['player'];
-                $type = (string)$definitionRefNodes[0]['type'];
-                $unitDefinitionFile = $uploadPath . '/' . $definitionRefNodes[0];
-
-                error_log("editor = $editor");
-                error_log("player = $player");
-                error_log("type = $type");
-                error_log("unitDefinitionFile = $unitDefinitionFile");
-
-                $definition = $this->loadUnitDefinitionFile($unitDefinitionFile);
-            }
-
             $unit = array(
-                "key" => $key,
-                "label" => $label,
-                "description" => $description,
-                "editor" => $editor,
-                "player" => $player,
-                "lastChange" => $lastChange,
-                "def" => $definition);
-            error_log("unit = " . print_r($unit, true));
+                "key" => (string)$idNodes[0],
+                "label" => (string)$labelNodes[0],
+                "description" => (string)$descriptionNodes[0],
+                "lastChange" => (string)$lastChangeNodes[0]
+            );
+            if (count($definitionRefNodes) != 1) {
+                $unit['editor'] = (string)$definitionNodes[0]['editor'];
+                $unit['player'] = (string)$definitionNodes[0]['player'];
+                $unit['defType'] = (string)$definitionNodes[0]['type'];
+                $unit['def'] = (string)$definitionNodes[0];
+            } else {
+                $unit['editor'] = (string)$definitionRefNodes[0]['editor'];
+                $unit['player'] = (string)$definitionRefNodes[0]['player'];
+                $unit['defType'] = (string)$definitionRefNodes[0]['type'];
+                $unitDefinitionFile = $uploadPath . '/' . $definitionRefNodes[0];
+                $unit['def'] = $this->loadUnitDefinitionFile($unitDefinitionFile);
+            }
+       }
 
-            array_push($importData, $unit);
-        }
-
-        return $importData;
+       return $unit;
     }
 
     /**
@@ -801,7 +765,7 @@ class DBConnectionAuthoring extends DBConnection
      * @return int
      * @throws ErrorException
      */
-    public function loadUnitDefinitionFile(string $unitDefinitionFile): int
+    public function loadUnitDefinitionFile(string $unitDefinitionFile): string
     {
         if (!file_exists($unitDefinitionFile)) {
             $message = "Unit definition file does not exist.";
@@ -809,7 +773,7 @@ class DBConnectionAuthoring extends DBConnection
             throw new ErrorException($message, 400);
 
         } else {
-            $definition = readfile($unitDefinitionFile);
+            $definition = file_get_contents($unitDefinitionFile);
 
             if (!$definition) {
                 $message = "Could not read unit definition file $unitDefinitionFile!";
@@ -817,7 +781,7 @@ class DBConnectionAuthoring extends DBConnection
                 throw new ErrorException($message, 400);
             }
 
-            error_log("definition = " . print_r($definition, true));
+            error_log("definition = " . $definition);
         }
 
         return $definition;
@@ -831,7 +795,10 @@ class DBConnectionAuthoring extends DBConnection
     public function saveUnitImportData(string $workspaceId, array $importData): void
     {
         foreach ($importData as $import) {
-            $this->addUnit($workspaceId, $import["key"], $import["label"]);
+            $newUnitId = $this->addUnit($workspaceId, $import["key"], $import["label"]);
+            $this->changeUnitProps($workspaceId, $newUnitId, $import["key"], $import["label"],
+                $import["description"], $import["player"], $import["editor"], $import["defType"]);
+            $this->setUnitDefinition($newUnitId, $import["def"]);
         }
     }
 
