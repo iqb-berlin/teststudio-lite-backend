@@ -273,12 +273,12 @@ class DBConnectionAuthoring extends DBConnection
 
     // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
     // with extension '.voud'
-    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip, $wsName)
+    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip, $maxDefSize)
     {
         $myreturn = false;
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT units.key, units.label, units.def, units.player_id, units.lastchanged FROM units
+                'SELECT * FROM units
                     WHERE units.id =:id and units.workspace_id=:ws');
 
             if ($sql->execute(array(
@@ -289,21 +289,24 @@ class DBConnectionAuthoring extends DBConnection
                 if ($data != false) {
                     $xRootElement = new SimpleXMLElement(
                         '<Unit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation=' .
-                        '"https://raw.githubusercontent.com/iqb-berlin/testcenter-backend/9.1.2/definitions/vo_Unit.xsd" />'
+                        '"https://raw.githubusercontent.com/iqb-berlin/testcenter-backend/9.2.0/definitions/vo_Unit.xsd" />'
                     );
                     $xMetadataElement = $xRootElement->addChild('Metadata');
                     $xMetadataElement->addChild('Id', $data['key']);
                     $xMetadataElement->addChild('Label', $data['label']);
                     setlocale(LC_TIME, "de_DE");
-
-                    if (strlen($data['def']) > 1000) {
+                    $xMetadataElement->addChild('Description', $data['description']);
+                    $xMetadataElement->addChild('Lastchange', date(DateTime::RFC3339, strtotime($data['lastchanged'])));
+                    $xDefElement = null;
+                    if (strlen($data['def']) > $maxDefSize) {
                         $xDefElement = $xRootElement->addChild('DefinitionRef', $data['key'] . '.voud');
-                        $xDefElement->addAttribute('player', $data['player_id']);
                         $targetZip->addFromString($data['key'] . '.voud', $data['def']);
                     } else {
                         $xDefElement = $xRootElement->addChild('Definition', $data['def']);
-                        $xDefElement->addAttribute('player', $data['player_id']);
                     }
+                    $xDefElement->addAttribute('player', $data['player_id']);
+                    $xDefElement->addAttribute('editor', $data['authoringtool_id']);
+                    $xDefElement->addAttribute('type', $data['defref']);
 
                     $xfile = dom_import_simplexml($xRootElement)->ownerDocument;
                     $xfile->formatOutput = true;
