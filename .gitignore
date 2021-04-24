@@ -1,4 +1,5 @@
 .idea
 *.iml
+./verona-modules
 
 **/DataSource.json
