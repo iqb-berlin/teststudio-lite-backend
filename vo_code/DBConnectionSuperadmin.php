@@ -198,7 +198,12 @@ class DBConnectionSuperAdmin extends DBConnection
                 }
 
                 $sql = $this->pdoDBhandle->prepare(
-                    'SELECT workspaces.id, workspaces.name FROM workspaces ORDER BY workspaces.name');
+                    'SELECT workspaces.id as id,
+                                workspaces.name as label,
+                                workspace_groups.id as ws_group_id,
+                                workspace_groups.name as ws_group_name FROM workspaces 
+                            INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
+                            ORDER BY workspaces.name');
 
                 if ($sql->execute()) {
                     $allworkspaces = $sql->fetchAll(PDO::FETCH_ASSOC);
@@ -206,7 +211,9 @@ class DBConnectionSuperAdmin extends DBConnection
                         foreach ($allworkspaces as $workspace) {
                             array_push($myreturn, [
                                 'id' => $workspace['id'],
-                                'label' => $workspace['name'],
+                                'label' => $workspace['label'],
+                                'ws_group_id' => $workspace['ws_group_id'],
+                                'ws_group_name' => $workspace['ws_group_name'],
                                 'selected' => in_array($workspace['id'], $workspaceIdList)]);
                         }
                     }
