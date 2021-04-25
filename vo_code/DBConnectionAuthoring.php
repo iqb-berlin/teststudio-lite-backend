@@ -212,7 +212,7 @@ class DBConnectionAuthoring extends DBConnection
                 'VALUES (:workspace, :key, :label, :now, :description, :def, :atId, :pId, :defref)'
             );
 
-            return $sql->execute(
+            $sql->execute(
                 array(
                     ':workspace' => $targetWorkspaceId,
                     ':key' => $targetUnitKey,
@@ -225,7 +225,7 @@ class DBConnectionAuthoring extends DBConnection
                     ':defref' => $sourceUnit['defref']
                 )
             );
-        }
+            return $this->pdoDBhandle->lastInsertId();        }
     }
 
     public function deleteUnits($workspaceId, $unitIds)
@@ -452,7 +452,7 @@ class DBConnectionAuthoring extends DBConnection
     }
 
     public function changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription,
-        $player, $editor, $defType)
+        $player, $editor, $defType): bool
     {
         $myreturn = false;
         $newTrimmedKey = trim($unitKey);
@@ -472,7 +472,7 @@ class DBConnectionAuthoring extends DBConnection
 
         if ($sql_update != false) {
             $myreturn = $sql_update->execute(array(
-                ':id' => strval($unitId),
+                ':id' => $unitId,
                 ':e' => $editor,
                 ':k' => $newTrimmedKey,
                 ':l' => $unitLabel,
@@ -482,6 +482,24 @@ class DBConnectionAuthoring extends DBConnection
             ));
         }
 
+        return $myreturn;
+    }
+
+    public function changeUnitLastChange($unitId, $lastChange): bool
+    {
+        $myreturn = false;
+        $lastChangeNumber = strtotime($lastChange);
+        $sql_update = $this->pdoDBhandle->prepare(
+            'UPDATE units
+            SET lastchanged=:l
+            WHERE id =:id');
+
+        if ($sql_update != false) {
+            $myreturn = $sql_update->execute(array(
+                ':id' => $unitId,
+                ':l' => date('Y-m-d G:i:s', $lastChangeNumber)
+             ));
+        }
         return $myreturn;
     }
 
@@ -587,9 +605,9 @@ class DBConnectionAuthoring extends DBConnection
         $mimeType = mime_content_type($filename);
         error_log("mimeType = $mimeType");
 
-        if (!isset($allowedMimeTypes[$mimeType])) {
-            throw new ErrorException('File upload failed due to not allowed mime type: ' . $mimeType, 415);
-        }
+        // if (!isset($allowedMimeTypes[$mimeType])) {
+        //     throw new ErrorException('File upload failed due to not allowed mime type: ' . $mimeType, 415);
+        // }
 
         return $mimeType;
     }
@@ -780,8 +798,6 @@ class DBConnectionAuthoring extends DBConnection
                 error_log($message);
                 throw new ErrorException($message, 400);
             }
-
-            error_log("definition = " . $definition);
         }
 
         return $definition;
@@ -799,6 +815,7 @@ class DBConnectionAuthoring extends DBConnection
             $this->changeUnitProps($workspaceId, $newUnitId, $import["key"], $import["label"],
                 $import["description"], $import["player"], $import["editor"], $import["defType"]);
             $this->setUnitDefinition($newUnitId, $import["def"]);
+            if (!empty($import['lastChange'])) $this->changeUnitLastChange($newUnitId, $import['lastChange']);
         }
     }
 

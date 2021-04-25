@@ -30,8 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                 $unitKey = $data["k"];
                 $unitLabel = $data["l"];
                 $unitDescription = $data["d"];
+                $unitPlayer = $data["p"];
+                $unitEditor = $data["e"];
+                $unitDefType = $data["dt"];
                 try {
-                    $myreturn = $myDBConnection->changeUnitProps($workspaceId, $unitId, $unitKey, $unitLabel, $unitDescription);
+                    $myreturn = $myDBConnection->changeUnitProps($workspaceId,
+                        $unitId, $unitKey, $unitLabel, $unitDescription, $unitPlayer, $unitEditor, $unitDefType);
                 } catch (Exception $e) {
                     error_log($e->getMessage());
                     $myerrorcode = $e->getCode();
