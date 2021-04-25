@@ -774,7 +774,7 @@ class DBConnectionAuthoring extends DBConnection
                 $unit['def'] = $this->loadUnitDefinitionFile($unitDefinitionFile);
             }
 
-            if ($unit['player'] == 'IQBVisualUnitPlayerV2') {
+            if ($unit['player'] == 'IQBVisualUnitPlayerV2' || $unit['player'] == 'IQBVisualUnitPlayerV1') {
                 $unit['editor'] = 'iqb-editor-dan@3.0';
                 $unit['player'] = 'iqb-player-dan@3.0';
                 $unit['defType'] = 'iqb-player-dan@3.0';
