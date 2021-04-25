@@ -17,11 +17,25 @@ CREATE TABLE public.users
     CONSTRAINT pk_users PRIMARY KEY (id)
 );
 
+CREATE TABLE public.workspace_groups
+(
+    id serial,
+    name character varying(50) NOT NULL,
+    settings text COLLATE pg_catalog."default",
+    CONSTRAINT pk_workspace_groups PRIMARY KEY (id)
+);
+
 CREATE TABLE public.workspaces
 (
     id serial,
     name character varying(50) NOT NULL,
+    group_id integer NOT NULL,
+    settings text COLLATE pg_catalog."default",
     CONSTRAINT pk_workspaces PRIMARY KEY (id)
+    CONSTRAINT fk_workspace_workspace_group FOREIGN KEY (group_id)
+        REFERENCES public.workspace_groups (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
 );
 
 CREATE TABLE public.workspace_users

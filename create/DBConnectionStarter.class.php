@@ -31,6 +31,25 @@ class DBConnectionStarter extends DBConnection {
         return $myreturn;
     }
 
+    public function getFirstWorkspaceGroupOrCreate(): int {
+        $sql = $this->pdoDBhandle->prepare('SELECT workspace_groups.id FROM workspaces');
+        if ($sql->execute()) {
+            $data = $sql->fetch(PDO::FETCH_ASSOC);
+            if ($data == false) {
+                $sql = $this->pdoDBhandle->prepare('INSERT INTO workspace_groups (name) VALUES (:wsg_name)');
+
+                if ($sql->execute([':wsg_name' => 'Arbeitsbereiche Gruppe 1'])) {
+
+                    return $this->pdoDBhandle->lastInsertId();
+                }
+
+            } else {
+                return $data[0]['id'];
+            }
+        }
+        return 0;
+    }
+
     public function addWorkspace($workspaceName) {
 
         $sql = $this->pdoDBhandle->prepare('SELECT workspaces.id FROM workspaces WHERE workspaces.name=:ws_name');
@@ -41,9 +60,11 @@ class DBConnectionStarter extends DBConnection {
 
             if ($data == false) {
 
-                $sql = $this->pdoDBhandle->prepare('INSERT INTO workspaces (name) VALUES (:ws_name)');
+                $sql = $this->pdoDBhandle->prepare('INSERT INTO workspaces (name, group_id) VALUES (:ws_name, :ws_group_id)');
 
-                if ($sql->execute([':ws_name' => $workspaceName])) {
+                if ($sql->execute([
+                    ':ws_name' => $workspaceName,
+                    ':ws_group_id' >= $this->getFirstWorkspaceGroupOrCreate()])) {
 
                     return "Neuer workspace '$workspaceName' angelegt.";
                 }

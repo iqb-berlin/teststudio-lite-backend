@@ -129,7 +129,8 @@ class DBConnectionAuthoring extends DBConnection
         $myreturn = [];
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.id, workspaces.name FROM workspaces
+                'SELECT workspaces.id, workspaces.name, workspace_groups.id as ws_group_id, workspace_groups.name as ws_group_name FROM workspaces
+                    INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
                     INNER JOIN workspace_users ON workspaces.id = workspace_users.workspace_id
                     INNER JOIN users ON workspace_users.user_id = users.id
                     INNER JOIN sessions ON  users.id = sessions.user_id
