@@ -773,6 +773,12 @@ class DBConnectionAuthoring extends DBConnection
                 $unitDefinitionFile = $uploadPath . '/' . $definitionRefNodes[0];
                 $unit['def'] = $this->loadUnitDefinitionFile($unitDefinitionFile);
             }
+
+            if ($unit['player'] == 'IQBVisualUnitPlayerV2') {
+                $unit['editor'] = 'iqb-editor-dan@3.0';
+                $unit['player'] = 'iqb-player-dan@3.0';
+                $unit['defType'] = 'iqb-player-dan@3.0';
+            }
        }
 
        return $unit;
