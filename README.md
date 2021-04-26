@@ -3,10 +3,7 @@
 
 # Teststudio-Lite Backend
 
-This is the backend for the Teststudio-Lite application (formally known as itemdb).\
-This project is not under active development currently. Only critical bugfixes will be done.
-
-You can find the frontend for this application [here](https://github.com/iqb-berlin/teststudio-lite-frontend).
+This is the backend for the IQB-Teststudio-Lite application. You can find the frontend for this application [here](https://github.com/iqb-berlin/teststudio-lite-frontend).
 
 You can find a complete setup with front- and backend [here](https://github.com/iqb-berlin/teststudio-lite-setup).
 
@@ -41,7 +38,7 @@ make run-detached
 * Apache2 (other webservers possible, but untested) with
   * mod_rewrite extension
   * header extension
-* PHP (tested with 7.3)
+* PHP (tested with 7.4)
 * PostgreSQL (tested with 9.3)
 
 #### Installation Steps
@@ -59,30 +56,30 @@ correctly this would be the case.
 
 - create data and tmp directories:
 ```
-mkdir itemauthoringtools
-mkdir itemplayers
+mkdir verona-modules
+mkdir config
 mkdir vo_tmp
 ```
 
 - Ensure that PHP has write access to those
 ```
-sudo chown -R www-data:www-data itemauthoringtools
-sudo chown -R www-data:www-data itemplayers
+sudo chown -R www-data:www-data verona-modules
+sudo chown -R www-data:www-data config
 sudo chown -R www-data:www-data vo_tmp
 ```
 
 - Install PostgreSQL and setup basic db information like db host name, db port, db user, and db user password (cited below as `{my_host}`, `{my_port}`, `
   {my_db_schema}`, `{my_db_user}`, and `{my_db_password}`).
-- Import 'IQB Itemdatenbank' SQL dump into your database schema (replace `{my_db_user}` and `{my_db_schema}` by your PostgreSQL basic configuration):
+- Import 'IQB Teststudio' SQL dump into your database schema (replace `{my_db_user}` and `{my_db_schema}` by your PostgreSQL basic configuration):
 ```
-psql -U {my_db_user} {my_db_schema} < create/IQB_Itemdatenbank_Database_CreatePG.sql
+psql -U {my_db_user} {my_db_schema} < create/IQB_Teststudio_Database_CreatePG.sql
 ```
 
 - Create a db connection file for the php backend with `make data-source [DB_HOST={my_host}] [DB_PORT={my_port}] [DB_SCHEMA={my_db_schema}] [DB_USER={my_db_user}] {DB_PASSWORD={my_db_password}}` and replace 
   `{my_host}`, `{my_port}`, `{my_db_schema}`, `{my_db_user}`, and `{my_db_password}` with your own db configuration data or `make data-source` with default 
   connection information, which is equivalent to:
 ```
-make data-source DB_HOST=localhost DB_PORT=5432 DB_SCHEMA=veraonline_itemdb DB_USER=root DB_PASSWORD=psqllocal
+make data-source DB_HOST=localhost DB_PORT=5432 DB_SCHEMA=verona_teststudio DB_USER=root DB_PASSWORD=psqllocal
 ```
 
 - Run init-script to create first super-user and workspace (replace `{user_name}`, `user_password}`

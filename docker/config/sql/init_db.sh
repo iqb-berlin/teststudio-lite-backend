@@ -2,10 +2,10 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-  -- database schema IQB Itemdatenbank
+  -- database schema IQB Teststudio
   -- for PostgreSQL
 
-  -- vo stands for VERA online
+  -- vo stands for Verona
 
 
   -- schema
@@ -17,15 +17,30 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       name character varying(50) NOT NULL,
       password character varying(100) NOT NULL,
       email character varying(100),
+      name character varying(100),
       is_superadmin boolean NOT NULL DEFAULT false,
       CONSTRAINT pk_users PRIMARY KEY (id)
   );
+
+  CREATE TABLE public.workspace_groups
+  (
+      id serial,
+      name character varying(50) NOT NULL,
+      settings text COLLATE pg_catalog."default",
+      CONSTRAINT pk_workspace_groups PRIMARY KEY (id)
+);
 
   CREATE TABLE public.workspaces
   (
       id serial,
       name character varying(50) NOT NULL,
+      group_id integer NOT NULL,
+      settings text COLLATE pg_catalog."default",
       CONSTRAINT pk_workspaces PRIMARY KEY (id)
+      CONSTRAINT fk_workspace_workspace_group FOREIGN KEY (group_id)
+        REFERENCES public.workspace_groups (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
   );
 
   CREATE TABLE public.workspace_users
@@ -78,8 +93,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   INSERT INTO public.users (name, password, is_superadmin)
     VALUES ('$SUPERUSER_NAME' , encode(digest('t$SUPERUSER_PASSWORD', 'sha1'), 'hex'), 'True');
 
-  INSERT INTO public.workspaces (name)
-    VALUES ('$WORKSPACE_NAME');
+  INSERT INTO public.workspace_groups (name)
+    VALUES ('$WORKSPACE_GROUP_NAME');
+
+  INSERT INTO public.workspaces (name, group_id)
+    VALUES (
+      '$WORKSPACE_NAME',
+      (SELECT id FROM public.workspace_groups WHERE name = '$WORKSPACE_GROUP_NAME')
+      );
 
   INSERT INTO workspace_users (workspace_id, user_id)
     VALUES(

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-<title>VERA online Testcenter starter</title>
+<title>Verona Teststudio starter</title>
 <style>
 		body {
 			font-family: Helvetica;
@@ -20,7 +20,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </head>
 <body>
-<h1>VERA online Itemdatenbank starter</h1>
+<h1>Verona Teststudio starter</h1>
 <p>
 <?php 
 // www.IQB.hu-berlin.de

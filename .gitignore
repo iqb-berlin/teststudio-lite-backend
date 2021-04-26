@@ -1,5 +1,7 @@
 .idea
 *.iml
-./verona-modules
 
 **/DataSource.json
+/itemauthoringtools/
+/itemplayers/
+/verona-modules/

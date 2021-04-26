@@ -8,7 +8,7 @@ echo -e "{
   \"type\": \"pgsql\",
   \"host\": \"${DB_HOST:-localhost}\",
   \"port\": \"${DB_PORT:-5432}\",
-  \"dbname\": \"${DB_SCHEMA:-veraonline_itemdb}\",
+  \"dbname\": \"${DB_SCHEMA:-verona_teststudio}\",
   \"user\": \"${DB_USER:-root}\",
   \"password\": \"${DB_PASSWORD:-psqllocal}\"
 }" > $DATA_SOURCE

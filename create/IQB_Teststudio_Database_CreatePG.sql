@@ -1,7 +1,7 @@
--- database schema IQB Itemdatenbank
+-- database schema IQB Teststudio
 -- for PostgreSQL
 
--- vo stands for VERA online
+-- vo stands for Verona
 
 
 
@@ -13,6 +13,7 @@ CREATE TABLE public.users
     name character varying(50) NOT NULL,
     password character varying(100) NOT NULL,
     email character varying(100),
+    name character varying(100),
     is_superadmin boolean NOT NULL DEFAULT false,
     CONSTRAINT pk_users PRIMARY KEY (id)
 );
