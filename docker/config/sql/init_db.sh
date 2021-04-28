@@ -17,7 +17,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       name character varying(50) NOT NULL,
       password character varying(100) NOT NULL,
       email character varying(100),
-      name character varying(100),
+      name_long character varying(100),
       is_superadmin boolean NOT NULL DEFAULT false,
       CONSTRAINT pk_users PRIMARY KEY (id)
   );
