@@ -36,7 +36,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       name character varying(50) NOT NULL,
       group_id integer NOT NULL,
       settings text COLLATE pg_catalog."default",
-      CONSTRAINT pk_workspaces PRIMARY KEY (id)
+      CONSTRAINT pk_workspaces PRIMARY KEY (id),
       CONSTRAINT fk_workspace_workspace_group FOREIGN KEY (group_id)
         REFERENCES public.workspace_groups (id) MATCH SIMPLE
         ON UPDATE NO ACTION
