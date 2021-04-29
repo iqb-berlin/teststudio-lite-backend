@@ -160,7 +160,8 @@ class DBConnectionAuthoring extends DBConnection
         if ($this->pdoDBhandle != false) {
 
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.id, workspaces.name as label FROM workspaces
+                'SELECT workspaces.id, workspaces.name as label, workspace_groups.name as group FROM workspaces
+                          INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
                     WHERE workspaces.id=:w');
 
             if ($sql->execute(array(

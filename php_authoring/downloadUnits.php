@@ -30,11 +30,6 @@
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
 					$okCount = 0;
-					$wsData = $myDBConnection->getWorkspaceData($myWorkspace);
-					// $targetfolder = ;
-					// if (!file_exists($targetfolder)) {
-					// if (mkdir($targetfolder)) {
-
 					$targetZip = new ZipArchive;
 					$targetFileName = '../vo_tmp/' . uniqid('unitexport_', true) . '.voud.zip';
 					$targetZip->open($targetFileName, ZipArchive::CREATE);
@@ -47,7 +42,7 @@
 
 					header('Content-Description: File Transfer');
 					header('Content-Type: application/zip');
-					header('Content-Disposition: attachment; filename="' . $wsData['label'] . '_units.zip' . '"');
+					header('Content-Disposition: attachment; filename="' . 'UnitDefs.voud.zip' . '"');
 					header('Expires: 0');
 					header('Cache-Control: must-revalidate');
 					header('Pragma: public');
