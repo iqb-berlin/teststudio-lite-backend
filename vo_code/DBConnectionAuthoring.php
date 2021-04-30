@@ -8,7 +8,7 @@ require_once('DBConnection.php');
 
 class DBConnectionAuthoring extends DBConnection
 {
-    private function fetchUnitById($unitId)
+    private function fetchUnitById(int $unitId): array
     {
         $stmt = $this->pdoDBhandle->prepare(
             'SELECT * FROM units WHERE id = :id'
@@ -20,7 +20,7 @@ class DBConnectionAuthoring extends DBConnection
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    private function fetchUnitKeyById($unitId)
+    private function fetchUnitKeyById(int $unitId): string
     {
         $stmt = $this->pdoDBhandle->prepare(
             'SELECT key FROM units WHERE id = :id'
@@ -92,12 +92,8 @@ class DBConnectionAuthoring extends DBConnection
             throw new ErrorException("Upload directory does not exist!", 500);
 
         } else {
-            if (empty($fileType)) {
-                $files = glob($uploadPath . "/*");
-
-            } else {
-                $files = glob($uploadPath . "/*." . $fileType);
-            }
+            $fileTypeSearchPattern = empty($fileType) ? "*" : "*." . $fileType;
+            $files = glob($uploadPath . $fileTypeSearchPattern);
 
             if (count($files) == 0) {
                 error_log("No unit metadata file found in upload directory!");
@@ -107,7 +103,7 @@ class DBConnectionAuthoring extends DBConnection
         }
     }
 
-    public function getUnitListByWorkspace($wsId)
+    public function getUnitListByWorkspace(int $wsId): array
     {
         $myreturn = [];
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
@@ -131,7 +127,7 @@ class DBConnectionAuthoring extends DBConnection
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns all workspaces for the user associated with the given token
     // returns [] if token not valid or no workspaces 
-    public function getWorkspaceList($token)
+    public function getWorkspaceList(string $token): array
     {
         $myreturn = [];
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
@@ -161,7 +157,7 @@ class DBConnectionAuthoring extends DBConnection
     // returns the name of the workspace given by id
     // returns '' if not found
     // token is not refreshed
-    public function getWorkspaceData($workspace_id)
+    public function getWorkspaceData(int $workspace_id): array
     {
         $myReturn = '';
         if ($this->pdoDBhandle != false) {
@@ -288,7 +284,7 @@ class DBConnectionAuthoring extends DBConnection
         }
     }
 
-    public function deleteUnits($workspaceId, $unitIds)
+    public function deleteUnits(int $workspaceId, array $unitIds): bool
     {
         $myreturn = false;
         $sql = $this->pdoDBhandle->prepare(
@@ -304,7 +300,7 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function moveUnits($targetWorkspaceId, $unitIds)
+    public function moveUnits(int $targetWorkspaceId, array $unitIds): array
     {
         $unmovableUnits = array();
 
@@ -334,7 +330,7 @@ class DBConnectionAuthoring extends DBConnection
 
     // filename will be unit key plus extension '.xml'; but if def is big there will be a second file
     // with extension '.voud'
-    public function writeUnitDefToZipFile($wsId, $unitId, $targetZip, $maxDefSize)
+    public function writeUnitDefToZipFile(int $wsId, int $unitId, ZipArchive $targetZip, int $maxDefSize): bool
     {
         $myreturn = false;
         if (($this->pdoDBhandle != false) and ($wsId > 0)) {
@@ -585,7 +581,7 @@ class DBConnectionAuthoring extends DBConnection
         return $return;
     }
 
-    public function setUnitEditor($unitId, $editorId)
+    public function setUnitEditor(int $unitId, string $editorId): bool
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
@@ -603,7 +599,7 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function setUnitDefinition($unitId, $myUnitdef)
+    public function setUnitDefinition(int $unitId, string $myUnitdef): bool
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
@@ -768,14 +764,14 @@ class DBConnectionAuthoring extends DBConnection
         $metadataFiles = $this->scanUploadDir($uploadPath, $metadataFileType);
 
         foreach ($metadataFiles as $metadataFile) {
-            array_push($importData, $this->parseUnitMetadataFile($metadataFile, $uploadPath));
+            array_push($importData, $this->readUnitMetadataFile($metadataFile, $uploadPath));
         }
 
         return $importData;
     }
 
     /**
-     * @param $metadataFile <p>
+     * @param string $metadataFile <p>
      * Path of uploaded unit metadata file
      * </p>
      * @param string $uploadPath <p>
@@ -783,15 +779,41 @@ class DBConnectionAuthoring extends DBConnection
      * </p>
      * @return array of unit import data
      */
-    public function parseUnitMetadataFile($metadataFile, string $uploadPath): array
+    public function readUnitMetadataFile(string $metadataFile, string $uploadPath): array
     {
         $result = array(
-            "filename" => $metadataFile,
+            "filename" => pathinfo($metadataFile, PATHINFO_BASENAME),
             "unit" => array(),
             "message" => ""
         );
 
         $xml = simplexml_load_file($metadataFile);
+
+        if (!$xml) {
+            $result["message"] = "XML-Struktur der Metadatendatei ist beschädigt";
+
+        } else {
+            $this->parseXML($xml, $uploadPath, $result);
+        }
+
+        error_log("RESULT = " . json_encode($result));
+
+        return $result;
+    }
+
+    /**
+     * @param SimpleXMLElement|string $xml <p>
+     * Unit XML Document
+     * </p>
+     * @param string $uploadPath <p>
+     * Server upload directory path
+     * </p>
+     * @param array $result <p>
+     * Referenced array of unit import data
+     * </p>
+     */
+    private function parseXML(SimpleXMLElement|string $xml, string $uploadPath, array &$result): void
+    {
         $idNodes = $xml->xpath('/Unit/Metadata/Id');
         $labelNodes = $xml->xpath('/Unit/Metadata/Label');
         $descriptionNodes = $xml->xpath('/Unit/Metadata/Description');
@@ -799,23 +821,96 @@ class DBConnectionAuthoring extends DBConnection
         $definitionRefNodes = $xml->xpath('/Unit/DefinitionRef');
         $definitionNodes = $xml->xpath('/Unit/Definition');
 
+        $idNodesCount = count($idNodes);
+        $labelNodesCount = count($labelNodes);
+        $descriptionNodesCount = count($descriptionNodes);
+        $lastChangeNodesCount = count($lastChangeNodes);
+        $definitionNodesCount = count($definitionNodes);
+        $definitionRefNodesCount = count($definitionRefNodes);
+
         if (
-            count($idNodes) != 1 ||         // mandatory node
-            count($labelNodes) > 1 ||       // optional node
-            count($descriptionNodes) > 1 || // optional node
-            count($lastChangeNodes) > 1 ||  // optional node
-            (count($definitionNodes) != 1 && count($definitionRefNodes) != 1)   // mandatory optional nodes
+            $idNodesCount != 1 ||                                           // mandatory node
+            $labelNodesCount > 1 ||                                         // optional node
+            $descriptionNodesCount > 1 ||                                   // optional node
+            $lastChangeNodesCount > 1 ||                                    // optional node
+            ($definitionNodesCount != 1 && $definitionRefNodesCount != 1)   // mandatory optional nodes
         ) {
-            error_log("Unit Metadata file $metadataFile is invalid!");
-            $result["message"] = "Metadaten sind fehlerhaft.";
+            error_log("Unit XML is invalid!");
+            $xmlErrorMessage = "XML fehlerhaft: ";
+            $validationMessages = array();
+
+            // Check XML Element minimum occurrence
+            $minOccMsg = "Element '%s' fehlt";
+            if ($idNodesCount == 0) {
+                array_push(
+                    $validationMessages,
+                    printf($minOccMsg, "Id")
+                );
+            }
+
+            if ($definitionNodesCount != 1 && $definitionRefNodesCount != 1) {
+                if ($definitionNodesCount == 0) {
+                    array_push(
+                        $validationMessages,
+                        printf($minOccMsg, "Definition")
+                    );
+                }
+                if ($definitionRefNodesCount == 0) {
+                    array_push(
+                        $validationMessages,
+                        printf($minOccMsg, "DefinitionRef")
+                    );
+                }
+            }
+
+            // Check XML Element maximum occurrence
+            $maxOccMsg = "Element '%s' existiert %d-mal zuviel";
+            if ($idNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "Id", $idNodesCount - 1)
+                );
+            }
+            if ($labelNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "Label", $labelNodesCount - 1)
+                );
+            }
+            if ($descriptionNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "Description", $descriptionNodesCount - 1)
+                );
+            }
+            if ($lastChangeNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "Lastchange", $lastChangeNodesCount - 1)
+                );
+            }
+            if ($definitionNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "Definition", $definitionNodesCount - 1)
+                );
+            }
+            if ($definitionRefNodesCount > 1) {
+                array_push(
+                    $validationMessages,
+                    printf($maxOccMsg, "DefinitionRef", $definitionRefNodesCount - 1)
+                );
+            }
+
+            $result["message"] = $xmlErrorMessage . implode(", ", $validationMessages) . ".";
+            error_log("RESULT = " . json_encode($result));
 
         } else {
             $unit = array(
                 "key" => (string)$idNodes[0],
                 "label" => (string)$labelNodes[0],
                 "description" => (string)$descriptionNodes[0],
-                "lastChange" => empty($lastChangeNodes[0]) ?
-                    date("Y-m-d G:i:s", filemtime($metadataFile)) : (string)$lastChangeNodes[0],
+                "lastChange" => empty($lastChangeNodes[0]) ? date("Y-m-d G:i:s") : (string)$lastChangeNodes[0],
                 "editor" => "",
                 "player" => "",
                 "defType" => "",
@@ -823,7 +918,7 @@ class DBConnectionAuthoring extends DBConnection
             );
 
             if (count($definitionRefNodes) == 1) {
-                $unitDefinitionFile = $uploadPath . '/' . $definitionRefNodes[0];
+                $unitDefinitionFile = $uploadPath . $definitionRefNodes[0];
                 $unit['editor'] = (string)$definitionRefNodes[0]['editor'];
                 $unit['player'] = (string)$definitionRefNodes[0]['player'];
                 $unit['defType'] = (string)$definitionRefNodes[0]['type'];
@@ -837,15 +932,15 @@ class DBConnectionAuthoring extends DBConnection
                     unset($result["unit"]);
                     switch ($exception->getCode()) {
                         case 404:
-                            $result["message"] = "Die Definitionsdatei ist nicht vorhanden.";
+                            $result["message"] = "Definitionsdatei nicht vorhanden";
                             break;
 
                         case 422:
-                            $result["message"] = "Die Definitionsdatei konnte nicht gelesen werden.";
+                            $result["message"] = "Definitionsdatei konnte nicht gelesen werden";
                             break;
 
                         default:
-                            $result["message"] = "Die Definitionsdatei ist fehlerhaft.";
+                            $result["message"] = "Definitionsdatei ist fehlerhaft";
                             break;
                     }
                 }
@@ -857,17 +952,10 @@ class DBConnectionAuthoring extends DBConnection
                 $unit['def'] = (string)$definitionNodes[0];
             }
 
-            if (!empty($unit) &&
-                ($unit['player'] == 'IQBVisualUnitPlayerV2' || $unit['player'] == 'IQBVisualUnitPlayerV1')) {
-                $unit['editor'] = 'iqb-editor-dan@3.0';
-                $unit['player'] = 'iqb-player-dan@3.0';
-                $unit['defType'] = 'iqb-player-dan@3.0';
-            }
+            $unit = $this->mapIqbPlayer($unit);
 
             $result["unit"] = $unit;
         }
-
-        return $result;
     }
 
     /**
@@ -893,6 +981,22 @@ class DBConnectionAuthoring extends DBConnection
         }
 
         return $definition;
+    }
+
+    /**
+     * Maps deprecated IQB Player notation
+     * @param array $unit
+     * @return array Unit with new notations for 'editor', 'player', and 'defType'
+     */
+    public function mapIqbPlayer(array $unit): array
+    {
+        if (!empty($unit) &&
+            ($unit['player'] == 'IQBVisualUnitPlayerV2' || $unit['player'] == 'IQBVisualUnitPlayerV1')) {
+            $unit['editor'] = 'iqb-editor-dan@3.0';
+            $unit['player'] = 'iqb-player-dan@3.0';
+            $unit['defType'] = 'iqb-player-dan@3.0';
+        }
+        return $unit;
     }
 
     /**
@@ -975,5 +1079,4 @@ class DBConnectionAuthoring extends DBConnection
 
         return $isSuccessful;
     }
-
 }
