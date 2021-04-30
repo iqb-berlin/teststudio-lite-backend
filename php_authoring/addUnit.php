@@ -29,9 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                 $mySourceUnit = $data["u"];
                 $unitKey = $data["k"];
                 $unitLabel = $data["l"];
+                $unitEditor = $data["e"];
+                $unitPlayer = $data["p"];
                 if (!isset($mySourceUnit)) {
                     try {
-                        $myreturn = $myDBConnection->addUnit($workspaceId, $unitKey, $unitLabel);
+                        $myreturn = $myDBConnection->addUnit($workspaceId, $unitKey, $unitLabel, $unitEditor, $unitPlayer);
                     } catch (Exception $e) {
                         error_log($e->getMessage());
                         $myerrorcode = $e->getCode();
