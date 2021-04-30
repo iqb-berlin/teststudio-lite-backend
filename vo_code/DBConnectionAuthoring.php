@@ -160,7 +160,8 @@ class DBConnectionAuthoring extends DBConnection
         if ($this->pdoDBhandle != false) {
 
             $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.id, workspaces.name as label, workspace_groups.name as group FROM workspaces
+                'SELECT workspaces.id, workspaces.name as label, workspaces.settings as settings,
+                            workspace_groups.name as group FROM workspaces
                           INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
                     WHERE workspaces.id=:w');
 
@@ -177,14 +178,15 @@ class DBConnectionAuthoring extends DBConnection
         return $myReturn;
     }
 
-    public function addUnit($workspaceId, $unitKey, $unitLabel)
+    public function addUnit($workspaceId, $unitKey, $unitLabel, $editor, $player)
     {
         if (!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
         }
 
         $sql = $this->pdoDBhandle->prepare(
-            'INSERT INTO units (workspace_id, key, label, lastchanged) VALUES (:workspace, :key, :label, :now)'
+            'INSERT INTO units (workspace_id, key, label, authoringtool_id, player_id, lastchanged) 
+                    VALUES (:workspace, :key, :label, :editor, :player, :now)'
         );
 
         $sql->execute(
@@ -192,6 +194,8 @@ class DBConnectionAuthoring extends DBConnection
                 ':workspace' => $workspaceId,
                 ':key' => $unitKey,
                 ':label' => $unitLabel,
+                ':editor' => $editor,
+                ':player' => $player,
                 ':now' => date('Y-m-d G:i:s', time()
                 )
             )
@@ -552,6 +556,16 @@ class DBConnectionAuthoring extends DBConnection
         return $stmt->execute($params);
     }
 
+    public function setWorkspaceSettings($workspaceId, $settings): bool
+    {
+        $stmt = $this->pdoDBhandle->prepare('UPDATE workspaces SET settings= :s WHERE id = :id');
+        $params = array(
+            ':id' => $workspaceId,
+            ':s' => json_encode($settings));
+
+        return $stmt->execute($params);
+    }
+
     /**
      * @param array $fileUploadMetaData <p>
      * Array of file upload metadata
@@ -819,7 +833,7 @@ class DBConnectionAuthoring extends DBConnection
     public function saveUnitImportData(string $workspaceId, array $importData): void
     {
         foreach ($importData as $import) {
-            $newUnitId = $this->addUnit($workspaceId, $import["key"], $import["label"]);
+            $newUnitId = $this->addUnit($workspaceId, $import["key"], $import["label"], '', '');
             $this->changeUnitProps($workspaceId, $newUnitId, $import["key"], $import["label"],
                 $import["description"], $import["player"], $import["editor"], $import["defType"]);
             $this->setUnitDefinition($newUnitId, $import["def"]);
