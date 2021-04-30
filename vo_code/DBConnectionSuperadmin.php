@@ -24,35 +24,6 @@ class DBConnectionSuperAdmin extends DBConnection
         return $myreturn;
     }
 
-    private function verifySuperAdminCredentials($sessionToken, $superAdminPassword)
-    {
-        $result = false;
-
-        $stmt = $this->pdoDBhandle->prepare(
-            'SELECT count(*) FROM users, sessions ' .
-            'WHERE sessions.token = :token AND sessions.user_id = users.id AND users.password = :password AND users.is_superadmin = true');
-        $params = array(
-            ':token' => $sessionToken,
-            ':password' => $this->encryptPassword($superAdminPassword)
-        );
-
-        if ($stmt->execute($params)) {
-            $superAdminCount = $stmt->fetchColumn();
-            if ($superAdminCount === 1) {
-                $result = true;
-            } else {
-                error_log('Super Admin Verification failed ...');
-                if ($superAdminCount === 0) {
-                    error_log('Super Admin could not be verified in this session!');
-                } else {
-                    error_log('More than one Super Admin verified in this session!');
-                }
-            }
-        }
-
-        return $result;
-    }
-
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns all workspaces if the user associated with the given token is superadmin
     // returns [] if token not valid or no workspaces 
@@ -155,7 +126,7 @@ class DBConnectionSuperAdmin extends DBConnection
     {
         $return = false;
 
-        if ($this->verifySuperAdminCredentials($sessionToken, $superAdminPassword)) {
+        if ($this->verifyCredentials($sessionToken, $superAdminPassword, true)) {
             $stmt = $this->pdoDBhandle->prepare(
                 'UPDATE users SET is_superadmin = :super_admin_flag WHERE id = :user_id');
             $params = array(

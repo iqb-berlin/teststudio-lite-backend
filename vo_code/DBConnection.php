@@ -219,5 +219,65 @@ class DBConnection {
         }
         return $myreturn;
     }
+
+    function verifyCredentials($sessionToken, $password, $superAdminOnly)
+    {
+        $result = false;
+
+        $stmt = $this->pdoDBhandle->prepare(
+            'SELECT count(*) FROM users, sessions ' .
+            'WHERE sessions.token = :token AND sessions.user_id = users.id AND users.password = :password' . ($superAdminOnly ? ' AND users.is_superadmin = true' : ''));
+        $params = array(
+            ':token' => $sessionToken,
+            ':password' => $this->encryptPassword($password)
+        );
+
+        if ($stmt->execute($params)) {
+            $queryResultCount = $stmt->fetchColumn();
+            if ($queryResultCount === 1) {
+                $result = true;
+            } else {
+                error_log('Super Admin Verification failed ...');
+                if ($queryResultCount === 0) {
+                    error_log('Super Admin could not be verified in this session!');
+                } else {
+                    error_log('More than one Super Admin verified in this session!');
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function setMyPassword($token, $oldPassword, $newPassword)
+    {
+        $myreturn = false;
+        if ($this->verifyCredentials($token, $oldPassword, false)) {
+            $sqlUserId = $this->pdoDBhandle->prepare(
+                'SELECT users.id FROM users
+                    INNER JOIN sessions ON users.id = sessions.user_id
+                    WHERE sessions.token=:token');
+
+            if ($sqlUserId != false) {
+                if ($sqlUserId->execute(array(
+                    ':token' => $token))) {
+
+                    $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
+
+                    if ($first != false) {
+                        $this->refreshSession($token);
+                        $sql = $this->pdoDBhandle->prepare(
+                            'UPDATE users SET password = :password WHERE id = :user_id');
+                        if ($sql->execute(array(
+                            ':user_id' => $first['id'],
+                            ':password' => $this->encryptPassword($newPassword)))) {
+                            $myreturn = true;
+                        }
+                    }
+                }
+            }
+        }
+        return $myreturn;
+    }
 }
-?>
+
