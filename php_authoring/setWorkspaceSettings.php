@@ -12,7 +12,7 @@
 
 		// *****************************************************************
 
-		$myReturn = [];
+		$myReturn = false;
 
 		$myErrorCode = 503;
 
@@ -26,27 +26,7 @@
 			if (isset($myToken)) {
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myErrorCode = 0;
-					$myReturn = $myDBConnection->getWorkspaceData($myWorkspace);
-					require_once('../vo_code/VeronaFolder.class.php');
-					date_default_timezone_set('Europe/Berlin');
-					$allModules = VeronaFolder::getModuleList();
-					$myReturn['editors'] = [];
-					$myReturn['players'] = [];
-					$myReturn['settings'] = json_decode($myReturn['settings']);
-					// $myReturn['settings'] = size($myReturn['settings']) == 0 ? [] : json_decode($myReturn['settings']);
-					foreach ($allModules as $module) {
-						if ($module['isEditor']) {
-							$myReturn['editors'] += [$module['id'] => [
-								'label' => $module['label'],
-								'html' => ''
-							]];
-						} else {
-							$myReturn['players'] += [$module['id'] => [
-								'label' => $module['label'],
-								'html' => ''
-							]];
-						}
-					}
+					$myReturn = $myDBConnection->setWorkspaceSettings($myWorkspace, $data["s"]);
 				}
 			}
 		}        

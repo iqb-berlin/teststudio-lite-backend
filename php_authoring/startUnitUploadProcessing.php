@@ -47,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
             try {
                 $importData = $dbConnection->fetchUnitImportData($uploadPath);
-
                 if (empty($importData)) {
                     $errorCode = 404;
                 } else {
@@ -55,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
                 }
 
             } catch (Exception $exception) {
-                error_log("failed upload: " . print_r($exception->getMessage(), true));
+                error_log("Upload processing failed: " . $exception->getMessage());
                 $errorCode = $exception->getCode();
 
             } finally {
