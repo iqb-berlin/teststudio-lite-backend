@@ -26,27 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
         if (isset($myToken)) {
             if ($myDBConnection->canAccessWorkspace($myToken, $workspaceId)) {
                 $myerrorcode = 0;
-                $mySourceUnit = $data["u"];
+                $unitId = $data["u"];
                 $unitKey = $data["k"];
                 $unitLabel = $data["l"];
-                $unitEditor = $data["e"];
+                $unitDescription = $data["d"];
                 $unitPlayer = $data["p"];
-                if (!isset($mySourceUnit)) {
-                    try {
-                        $myreturn = $myDBConnection->addUnit($workspaceId, $unitKey, $unitLabel, $unitEditor, $unitPlayer);
-                    } catch (Exception $e) {
-                        error_log($e->getMessage());
-                        $myerrorcode = $e->getCode();
-                        //$myreturn = false;
-                    }
-                } else {
-                    try {
-                        $myreturn = $myDBConnection->copyUnit($workspaceId, $unitKey, $unitLabel, $mySourceUnit);
-                    } catch (Exception $e) {
-                        error_log($e->getMessage());
-                        $myerrorcode = $e->getCode();
-                        //$myreturn = false;
-                    }
+                $unitEditor = $data["e"];
+                $unitDefType = $data["dt"];
+                try {
+                    $myreturn = $myDBConnection->changeUnitProps($workspaceId,
+                        $unitId, $unitKey, $unitLabel, $unitDescription, $unitPlayer, $unitEditor, $unitDefType);
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                    $myerrorcode = $e->getCode();
+                    // $myreturn = false;
                 }
             }
         }

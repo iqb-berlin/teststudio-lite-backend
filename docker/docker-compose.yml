@@ -8,6 +8,7 @@ x-env-postgres: &env-postgres
 x-env-initdata: &env-initdata
   SUPERUSER_NAME: super
   SUPERUSER_PASSWORD: user123
+  WORKSPACE_GROUP_NAME: sample_workspace_group
   WORKSPACE_NAME: sample_workspace
 
 services:
@@ -37,8 +38,8 @@ services:
     volumes:
       - ../:/var/www/html/
       - vo_tmp:/var/www/html/vo_tmp
-      - itemplayers:/var/www/html/itemplayers
-      - itemauthoringtools:/var/www/html/itemauthoringtools
+      - verona-modules:/var/www/html/verona-modules
+      - config:/var/www/html/config
     ports:
       - "8081:80"
     stdin_open: true
@@ -47,5 +48,5 @@ services:
 volumes:
   dbdata:
   vo_tmp:
-  itemplayers:
-  itemauthoringtools:
+  verona-modules:
+  config:

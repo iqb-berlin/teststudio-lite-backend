@@ -9,22 +9,22 @@
 		exit();
 	} else {
 
-		require_once('../vo_code/DBConnectionSuperadmin.php');
+		require_once('./vo_code/DBConnection.php');
 
 		// Authorisation
 		$myerrorcode = 503;
 		$myreturn = '';
 
-		$myDBConnection = new DBConnectionSuperadmin();
+		$myDBConnection = new DBConnection();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$wsname = $data["n"];
-			$wsGroupId = $data["wsg"];
+			$oldPw = $data["old"];
+			$newPw = $data["new"];
 
 			if (isset($myToken)) {
-				$ok = $myDBConnection->addWorkspace($myToken, $wsname, $wsGroupId);
+				$ok = $myDBConnection->setMyPassword($myToken, $oldPw, $newPw);
 				if ($ok) {
 					$myerrorcode = 0;
 					$myreturn = $ok;

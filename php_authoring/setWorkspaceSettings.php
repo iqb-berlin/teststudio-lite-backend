@@ -12,32 +12,30 @@
 
 		// *****************************************************************
 
-		$myreturn = false;
+		$myReturn = false;
 
-		$myerrorcode = 503;
+		$myErrorCode = 503;
 
 		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
-			$myerrorcode = 401;
+			$myErrorCode = 401;
 
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
 			$myWorkspace = $data["ws"];
 			if (isset($myToken)) {
 				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
-					$myerrorcode = 0;
-					$myId = $data["u"];
-					$myUnitdef = $data["ud"];
-					$myreturn = $myDBConnection->setUnitDefinition($myId, $myUnitdef);
+					$myErrorCode = 0;
+					$myReturn = $myDBConnection->setWorkspaceSettings($myWorkspace, $data["s"]);
 				}
 			}
 		}        
 		unset($myDBConnection);
 
-		if ($myerrorcode > 0) {
-			http_response_code($myerrorcode);
+		if ($myErrorCode > 0) {
+			http_response_code($myErrorCode);
 		} else {
-			echo(json_encode($myreturn));
+			echo(json_encode($myReturn));
 		}
 	}
 ?>

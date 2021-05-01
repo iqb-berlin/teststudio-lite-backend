@@ -1,4 +1,4 @@
-<?php 
+<?php
 // www.IQB.hu-berlin.de
 // Bărbulescu, Stroescu, Mechtel
 // 2018
@@ -8,29 +8,29 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 		exit();
 	} else {
+		require_once('../vo_code/DBConnectionAuthoring.php');
 
-		require_once('../vo_code/DBConnectionSuperadmin.php');
+		// *****************************************************************
 
-		// Authorisation
-		$myerrorcode = 503;
 		$myreturn = '';
 
-		$myDBConnection = new DBConnectionSuperadmin();
+		$myerrorcode = 503;
+
+		$myDBConnection = new DBConnectionAuthoring();
 		if (!$myDBConnection->isError()) {
 			$myerrorcode = 401;
+
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$wsname = $data["n"];
-			$wsGroupId = $data["wsg"];
-
+			$myWorkspace = $data["ws"];
 			if (isset($myToken)) {
-				$ok = $myDBConnection->addWorkspace($myToken, $wsname, $wsGroupId);
-				if ($ok) {
+				if ($myDBConnection->canAccessWorkspace($myToken, $myWorkspace)) {
 					$myerrorcode = 0;
-					$myreturn = $ok;
+					$myUnitId = $data["u"];
+					$myreturn = $myDBConnection->getUnitDefinition($myUnitId);
 				}
 			}
-		}
+		}        
 		unset($myDBConnection);
 
 		if ($myerrorcode > 0) {

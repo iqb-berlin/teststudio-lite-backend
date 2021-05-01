@@ -22,9 +22,10 @@
 			$myToken = $data["t"];
 			$wsId = $data["ws_id"];
 			$wsName = $data["ws_name"];
+			$wsGroup = $data["ws_group"];
 
 			if (isset($myToken)) {
-				$ok = $myDBConnection->setWorkspace($myToken, $wsId, $wsName);
+				$ok = $myDBConnection->setWorkspace($myToken, $wsId, $wsName, $wsGroup);
 				if ($ok) {
 					$myerrorcode = 0;
 					$myreturn = $ok;

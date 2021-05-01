@@ -20,12 +20,11 @@
 			$myerrorcode = 401;
 			$data = json_decode(file_get_contents('php://input'), true);
 			$myToken = $data["t"];
-			$wsname = $data["n"];
-			$wsGroupId = $data["wsg"];
+			$name = $data["n"];
 
 			if (isset($myToken)) {
-				$ok = $myDBConnection->addWorkspace($myToken, $wsname, $wsGroupId);
-				if ($ok) {
+				$ok = $myDBConnection->addWorkspaceGroup($myToken, $name);
+				if ($ok > 0) {
 					$myerrorcode = 0;
 					$myreturn = $ok;
 				}
