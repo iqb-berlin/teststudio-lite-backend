@@ -1,5 +1,1 @@
-{
-  "app_title": "IQB-Teststudio BW",
-  "intro_html": "<p>Diese Web-Anwendung dient der Aufgabenentwicklung zum Einsatz in computerbasierten Leistungstests oder Befragungen. Der Zugang ist nur möglich, wenn Sie Zugangsdaten erhalten haben. Es sind keine weiteren Seiten öffentlich zugänglich.</p><p>Die Programmierungen erfolgten durch das <a href=\"https://www.iqb.hu-berlin.de\" target=\"_blank\">Institut zur Qualitätsentwicklung im Bildungswesen</a>.</p>",
-  "impressum_html" : "<p>Diese Installation wurde noch nicht konfiguriert.</p>"
-}
+{"app_title":"IQB-Teststudio","intro_html":"<p>Diese Web-Anwendung dient der Aufgabenentwicklung zum Einsatz in computerbasierten Leistungstests oder Befragungen. Der Zugang ist nur möglich, wenn Sie Zugangsdaten erhalten haben. Es sind keine weiteren Seiten öffentlich zugänglich.</p><p>Die Programmierungen erfolgten durch das <a href=\"https://www.iqb.hu-berlin.de\" target=\"_blank\">Institut zur Qualitätsentwicklung im Bildungswesen</a>.</p>","impressum_html":"<p>Diese Installation wurde noch nicht konfiguriert.</p>\n<p>Diese Installation wurde noch nicht konfiguriert.</p>\n<p><div><script","global_warning_expired_day":"2021-04-30T22:00:00.000Z","global_warning_expired_hour":"10","global_warning":""}
