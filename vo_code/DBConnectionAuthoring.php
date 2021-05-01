@@ -844,7 +844,7 @@ class DBConnectionAuthoring extends DBConnection
             if ($idNodesCount == 0) {
                 array_push(
                     $validationMessages,
-                    printf($minOccMsg, "Id")
+                    sprintf($minOccMsg, "Id")
                 );
             }
 
@@ -852,13 +852,13 @@ class DBConnectionAuthoring extends DBConnection
                 if ($definitionNodesCount == 0) {
                     array_push(
                         $validationMessages,
-                        printf($minOccMsg, "Definition")
+                        sprintf($minOccMsg, "Definition")
                     );
                 }
                 if ($definitionRefNodesCount == 0) {
                     array_push(
                         $validationMessages,
-                        printf($minOccMsg, "DefinitionRef")
+                        sprintf($minOccMsg, "DefinitionRef")
                     );
                 }
             }
@@ -868,37 +868,37 @@ class DBConnectionAuthoring extends DBConnection
             if ($idNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "Id", $idNodesCount - 1)
+                    sprintf($maxOccMsg, "Id", $idNodesCount - 1)
                 );
             }
             if ($labelNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "Label", $labelNodesCount - 1)
+                    sprintf($maxOccMsg, "Label", $labelNodesCount - 1)
                 );
             }
             if ($descriptionNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "Description", $descriptionNodesCount - 1)
+                    sprintf($maxOccMsg, "Description", $descriptionNodesCount - 1)
                 );
             }
             if ($lastChangeNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "Lastchange", $lastChangeNodesCount - 1)
+                    sprintf($maxOccMsg, "Lastchange", $lastChangeNodesCount - 1)
                 );
             }
             if ($definitionNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "Definition", $definitionNodesCount - 1)
+                    sprintf($maxOccMsg, "Definition", $definitionNodesCount - 1)
                 );
             }
             if ($definitionRefNodesCount > 1) {
                 array_push(
                     $validationMessages,
-                    printf($maxOccMsg, "DefinitionRef", $definitionRefNodesCount - 1)
+                    sprintf($maxOccMsg, "DefinitionRef", $definitionRefNodesCount - 1)
                 );
             }
 
