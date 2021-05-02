@@ -181,7 +181,7 @@ class DBConnectionAuthoring extends DBConnection
         return $myReturn;
     }
 
-    public function addUnit(int $workspaceId, string $unitKey, string $unitLabel, string $editor, string $player): string
+    public function addUnit(int $workspaceId, string $unitKey, ?string $unitLabel, ?string $editor, ?string $player): string
     {
         if (!$this->checkUniqueWorkspaceUnitKey($workspaceId, $unitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $workspaceId)", 406);
@@ -252,7 +252,7 @@ class DBConnectionAuthoring extends DBConnection
      * @return string
      * @throws Exception
      */
-    public function copyUnit(int $targetWorkspaceId, string $targetUnitKey, string $targetUnitLabel, string $sourceUnitId): string
+    public function copyUnit(int $targetWorkspaceId, string $targetUnitKey, ?string $targetUnitLabel, string $sourceUnitId): string
     {
         if (!$this->checkUniqueWorkspaceUnitKey($targetWorkspaceId, $targetUnitKey)) {
             throw new Exception("Unit key already exists in workspace (Id: $targetWorkspaceId)", 406);
@@ -523,11 +523,11 @@ class DBConnectionAuthoring extends DBConnection
         int $workspaceId,
         string $unitId,
         string $unitKey,
-        string $unitLabel,
-        string $unitDescription,
-        string $player,
-        string $editor,
-        string $defType): bool
+        ?string $unitLabel,
+        ?string $unitDescription,
+        ?string $player,
+        ?string $editor,
+        ?string $defType): bool
     {
         $return = false;
         $newTrimmedKey = trim($unitKey);
@@ -581,7 +581,7 @@ class DBConnectionAuthoring extends DBConnection
         return $return;
     }
 
-    public function setUnitEditor(int $unitId, string $editorId): bool
+    public function setUnitEditor(int $unitId, ?string $editorId): bool
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
@@ -599,7 +599,7 @@ class DBConnectionAuthoring extends DBConnection
         return $myreturn;
     }
 
-    public function setUnitDefinition(int $unitId, string $myUnitdef): bool
+    public function setUnitDefinition(int $unitId, ?string $myUnitdef): bool
     {
         $myreturn = false;
         $sql_update = $this->pdoDBhandle->prepare(
