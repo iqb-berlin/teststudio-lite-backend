@@ -27,7 +27,6 @@ COPY docker/config/local.php.ini /usr/local/etc/php/conf.d/local.ini
 # copy source code
 COPY create /var/www/html/create
 COPY php_authoring /var/www/html/php_authoring
-COPY php_preview /var/www/html/php_preview
 COPY php_superadmin /var/www/html/php_superadmin
 COPY vo_code /var/www/html/vo_code
 COPY .htaccess /var/www/html/
