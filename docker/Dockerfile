@@ -34,6 +34,8 @@ COPY .htaccess /var/www/html/
 COPY getStatus.php /var/www/html/
 COPY login.php /var/www/html/
 COPY logout.php /var/www/html/
+COPY getConfig.php /var/www/html/
+COPY setUserPassword.php /var/www/html/
 
 # data directories
 RUN mkdir -p /var/www/html/verona-modules
