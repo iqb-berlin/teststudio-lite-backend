@@ -19,10 +19,6 @@ Several steps are taken to update the git repository. The shell commands are the
     git push
     git tag {new_version}
     git push origin {new_version}
-
-STEP 4 - Run docker image release script
-When used with a parameter it creates a docker image with that tag and pushes
-it to docker hub.
 """
 import sys
 import re
@@ -86,10 +82,6 @@ def _git_tag(new_version):
     subprocess.run(f"git push origin {new_version}", shell=True, check=True)
 
 
-def _release_docker_image(new_version):
-    subprocess.run(f"./scripts/docker_release.sh -t {new_version}", shell=True, check=True)
-
-
 _check_prerequisites()
 with open(VERSION_FILE) as version_file:
     version_file_content = version_file.read()
@@ -100,4 +92,3 @@ with open(VERSION_FILE, 'w') as f:
     f.write(new_version_file_content)
 
 _git_tag(new_version)
-_release_docker_image(new_version)
