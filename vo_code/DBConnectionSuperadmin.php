@@ -30,7 +30,7 @@ class DBConnectionSuperAdmin extends DBConnection
      * <p>Null, if session token is invalid, user is not a super admin,</p>
      * <p>otherwise an array of all workspace id, workspace name, workspace group id, and workspace group name quadruples</p>
      */
-    public function getWorkspaces(string $sessionToken): ?array
+    public function getWorkspaces(?string $sessionToken): ?array
     {
         if (!empty($sessionToken) && $this->isSuperAdmin($sessionToken)) {
             $query = "
@@ -40,7 +40,7 @@ class DBConnectionSuperAdmin extends DBConnection
                                workspace_groups.name as ws_group_name
                         FROM workspaces
                             INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
-                        ORDER BY workspaces.name
+                        ORDER BY workspace_groups.name, workspaces.name
                         ";
             $stmt = $this->pdoDBhandle->prepare($query);
             $stmt->execute();
