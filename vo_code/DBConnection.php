@@ -1,6 +1,5 @@
 <?php
 // www.IQB.hu-berlin.de
-// Bărbulescu, Stroescu, Mechtel
 // 2018
 // license: MIT
 
@@ -163,21 +162,20 @@ class DBConnection
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // deletes all tokens of this user
-    public function logout($token): bool
+    public function logout(string $sessionToken): bool
     {
-        $return = false;
-        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
-            $sql = $this->pdoDBhandle->prepare(
-                'DELETE FROM sessions 
-                    WHERE sessions.token=:token');
-            if ($sql != false) {
-                if ($sql->execute(array(
-                    ':token' => $token))) {
-                    $return = true;
-                }
-            }
+        if ($this->pdoDBhandle != false and !empty($sessionToken)) {
+            $query = "
+                DELETE FROM sessions
+                WHERE sessions.token=:token
+                ";
+            $params = array(':token' => $sessionToken);
+
+            $statement = $this->pdoDBhandle->prepare($query);
+            $result = $statement->execute($params);
         }
-        return $return;
+
+        return $result ?? false;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
