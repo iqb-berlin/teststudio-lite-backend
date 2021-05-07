@@ -4,234 +4,296 @@
 // 2018
 // license: MIT
 
-class DBConnection {
+class DBConnection
+{
     protected $pdoDBhandle = false;
-    public $errorMsg = ''; // only used by new (construct)
-    private $idletime = 60 * 60; // time the usertoken gets invalid
+    public string $errorMsg = ''; // only used by new (construct)
+    private int $idleTime = 60 * 60; // time the user token gets invalid
 
     // __________________________
-    public function __construct() {
-        try {
-            $cData = json_decode(file_get_contents(__DIR__ . '/DataSource.json'));
-            if ($cData->type === 'mysql') {
-                $this->pdoDBhandle = new PDO("mysql:host=" . $cData->host . ";port=" . $cData->port . ";dbname=" . $cData->dbname, $cData->user, $cData->password);
-            } elseif ($cData->type === 'pgsql') {
-                $this->pdoDBhandle = new PDO("pgsql:host=" . $cData->host . ";port=" . $cData->port . ";dbname=" . $cData->dbname . ";user=" . $cData->user . ";password=" . $cData->password);
+    public function __construct()
+    {
+        $cData = json_decode(file_get_contents(__DIR__ . '/DataSource.json'));
+
+        if ($cData->type !== 'pgsql') {
+            error_log("Connection type is '$cData->type' but has to be 'pgsql'!");
+
+        } else {
+            try {
+                $dsn = "pgsql:host=$cData->host;port=$cData->port;dbname=$cData->dbname;user=$cData->user;password=$cData->password";
+                $this->pdoDBhandle = new PDO($dsn);
+                $this->pdoDBhandle->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            } catch (PDOException $e) {
+                $this->errorMsg = $e->getMessage();
+                $this->pdoDBhandle = false;
+                error_log($this->errorMsg);
             }
-
-            $this->pdoDBhandle->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        } catch(PDOException $e) {
-            $this->errorMsg = $e->getMessage();
-            $this->pdoDBhandle = false;
-            error_log($this->errorMsg);
         }
+
     }
 
     // __________________________
-    public function __destruct() {
+    public function __destruct()
+    {
         if ($this->pdoDBhandle !== false) {
             unset($this->pdoDBhandle);
             $this->pdoDBhandle = false;
         }
     }
 
+    /**
+     * @param string $token
+     * @param $id
+     * @return string
+     */
+    private function createSession(string $token, $id): string
+    {
+        $query = "
+            INSERT INTO sessions (token, user_id, valid_until)
+                VALUES(:token, :user_id, :valid_until)
+            ";
+        $params = array(
+            ':token' => $token,
+            ':user_id' => $id,
+            ':valid_until' => date('Y-m-d G:i:s', time() + $this->idleTime)
+        );
+
+        $statement = $this->pdoDBhandle->prepare($query);
+
+        return $statement->execute($params) ? $token : "";
+    }
+
+    /**
+     * @param $userId
+     */
+    private function deleteSession($userId): void
+    {
+        $query = "DELETE FROM sessions WHERE sessions.user_id = :userId";
+        $params = [
+            ':userId' => $userId
+        ];
+
+        $statement = $this->pdoDBhandle->prepare($query);
+
+        if ($statement != false) {
+            $statement->execute($params);
+        }
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return false|array User data, if username and password match otherwise false
+     */
+    private function getUser(string $username, string $password): array
+    {
+        $query = "
+                SELECT *
+                FROM users
+                WHERE users.name = :name
+                    AND users.password = :password
+                ";
+        $params = [
+            ':name' => $username,
+            ':password' => $this->encryptPassword($password)
+        ];
+
+        $sql_select = $this->pdoDBhandle->prepare($query);
+        $sql_select->execute($params);
+
+        return $sql_select->fetch(PDO::FETCH_ASSOC);
+    }
+
     // __________________________
-    public function isError() {
+    public function isError(): bool
+    {
         return $this->pdoDBhandle == false;
     }
 
     // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
     // sets the valid_until of the token to now + idle
-    protected function refreshSession($token) {
-        $sql_update = $this->pdoDBhandle->prepare(
-            'UPDATE sessions
-                SET valid_until =:value
-                WHERE token =:token');
+    protected function refreshSession(string $token): void
+    {
+        $query = "
+            UPDATE sessions
+            SET valid_until =:value
+            WHERE token =:token
+        ";
+        $params = array(
+            ":value" => date('Y/m/d h:i:s a', time() + $this->idleTime),
+            ":token" => $token
+        );
 
-        if ($sql_update != false) {
-            $sql_update->execute(array(
-                ':value' => date('Y/m/d h:i:s a', time() + $this->idletime),
-                ':token'=> $token));
-        }
+        $stmt = $this->pdoDBhandle->prepare($query);
+        $stmt->execute($params);
     }
 
     // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
     // encrypts password to introduce a very private way (salt)
-    protected function encryptPassword($password) {
+    protected function encryptPassword($password): string
+    {
         return sha1('t' . $password);
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // deletes all tokens of this user if any and creates new token
-    public function login($username, $password) {
-        $myreturn = '';
+    public function login(string $username, string $password): ?array
+    {
+        $user = false;
 
-        if (($this->pdoDBhandle != false) and (strlen($username) > 0) and (strlen($username) < 50) 
-                        and (strlen($password) > 0) and (strlen($password) < 50)) {
-            $sql_select = $this->pdoDBhandle->prepare(
-                'SELECT * FROM users
-                    WHERE users.name = :name AND users.password = :password');
-            if ($sql_select->execute(array(
-                ':name' => $username, 
-                ':password' => $this->encryptPassword($password)))) {
+        if (strlen($username) > 0 and strlen($username) < 50 and
+            strlen($password) > 0 and strlen($password) < 50) {
 
-                $selector = $sql_select->fetch(PDO::FETCH_ASSOC);
-                if ($selector != false) {
-                    // first: delete all sessions of this user if any
-                    $sql_delete = $this->pdoDBhandle->prepare(
-                        'DELETE FROM sessions 
-                            WHERE sessions.user_id = :id');
+            $user = $this->getUser($username, $password);
 
-                    if ($sql_delete != false) {
-                        $sql_delete -> execute(array(
-                            ':id' => $selector['id']
-                        ));
-                    }
+            if ($user) {
+                // first: delete all sessions of this user if any
+                $this->deleteSession($user['id']);
 
-                    // create new token
-                    $myToken = uniqid('t', true);
-                    
-                    $sql_insert = $this->pdoDBhandle->prepare(
-                        'INSERT INTO sessions (token, user_id, valid_until) 
-                            VALUES(:token, :user_id, :valid_until)');
-
-                    if ($sql_insert != false) {
-                        if ($sql_insert->execute(array(
-                            ':token' => $myToken,
-                            ':user_id' => $selector['id'],
-                            ':valid_until' => date('Y-m-d G:i:s', time() + $this->idletime)))) {
-
-                                $myreturn = $myToken;
-                        }
-                    }
-                }
+                // create new token
+                $sessionToken = $this->createSession(uniqid('t', true), $user['id']);
             }
         }
-        return $myreturn;
+
+        return isset($sessionToken) && !empty($sessionToken)
+            ? ["user" => $user, "sessionToken" => $sessionToken]
+            : null;
     }
-    
+
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // deletes all tokens of this user
-    public function logout($token) {
-        $myreturn = false;
+    public function logout($token): bool
+    {
+        $return = false;
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'DELETE FROM sessions 
                     WHERE sessions.token=:token');
             if ($sql != false) {
-                if ($sql -> execute(array(
-                    ':token'=> $token))) {
-                        $myreturn = true;
+                if ($sql->execute(array(
+                    ':token' => $token))) {
+                    $return = true;
                 }
             }
         }
-        return $myreturn;
+        return $return;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     // returns the name of the user with given (valid) token
     // returns '' if token not found or not valid
     // refreshes token
-    public function getLoginName($token) {
-        $myreturn = '';
-        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
+    public function getLoginName($token)
+    {
+        $return = '';
+        if ($this->pdoDBhandle != false and !empty($token)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.name FROM users
                     INNER JOIN sessions ON users.id =sessions.user_id
                     WHERE sessions.token=:token');
-    
+
             if ($sql != false) {
                 if ($sql->execute(array(
                     ':token' => $token))) {
 
-                    $first = $sql -> fetch(PDO::FETCH_ASSOC);
+                    $first = $sql->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
                         $this->refreshSession($token);
-                        $myreturn = $first['name'];
+                        $return = $first['name'];
                     }
                 }
             }
         }
-        return $myreturn;
+        return $return;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns true if the user with given (valid) token is superadmin
+    // returns true if the user with given (valid) token is super admin
     // refreshes token
-    public function isSuperAdmin($token) {
-        $myreturn = false;
+    public function isSuperAdmin($token): bool
+    {
+        $return = false;
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
             $sql = $this->pdoDBhandle->prepare(
                 'SELECT users.is_superadmin FROM users
                     INNER JOIN sessions ON users.id = sessions.user_id
                     WHERE sessions.token=:token');
-    
+
             if ($sql != false) {
-                if ($sql -> execute(array(
+                if ($sql->execute(array(
                     ':token' => $token))) {
 
-                    $first = $sql -> fetch(PDO::FETCH_ASSOC);
+                    $first = $sql->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
                         $this->refreshSession($token);
-                        $myreturn = $first['is_superadmin'] == 'true';
+                        $return = $first['is_superadmin'] == 'true';
                     }
                 }
             }
         }
-        return $myreturn;
+        return $return;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns true if the user with given (valid) token is superadmin
+    // returns true if the user with given (valid) token is super admin
     // refreshes token
-    public function canAccessWorkspace($token, $workspaceId) {
-        $myreturn = false;
+    public function canAccessWorkspace($token, $workspaceId): bool
+    {
+        $return = false;
         if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
             $sqlUserId = $this->pdoDBhandle->prepare(
                 'SELECT users.id FROM users
                     INNER JOIN sessions ON users.id = sessions.user_id
                     WHERE sessions.token=:token');
-    
+
             if ($sqlUserId != false) {
-                if ($sqlUserId -> execute(array(
+                if ($sqlUserId->execute(array(
                     ':token' => $token))) {
 
-                    $first = $sqlUserId -> fetch(PDO::FETCH_ASSOC);
+                    $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
                         $this->refreshSession($token);
                         $sqlWorkspace = $this->pdoDBhandle->prepare(
                             'SELECT workspace_users.workspace_id FROM workspace_users
                                 WHERE workspace_users.workspace_id=:wsId and workspace_users.user_id=:userId');
-            
-                        if ($sqlWorkspace -> execute(array(
+
+                        if ($sqlWorkspace->execute(array(
                             ':wsId' => $workspaceId, ':userId' => $first['id']))) {
 
-                            $first = $sqlWorkspace -> fetch(PDO::FETCH_ASSOC);
-                            $myreturn = $first != false;
+                            $first = $sqlWorkspace->fetch(PDO::FETCH_ASSOC);
+                            $return = $first != false;
                         }
                     }
                 }
             }
         }
-        return $myreturn;
+        return $return;
     }
 
-    function verifyCredentials($sessionToken, $password, $superAdminOnly)
+    function verifyCredentials($sessionToken, $password, $superAdminOnly): bool
     {
         $result = false;
 
-        $stmt = $this->pdoDBhandle->prepare(
-            'SELECT count(*) FROM users, sessions ' .
-            'WHERE sessions.token = :token AND sessions.user_id = users.id AND users.password = :password' . ($superAdminOnly ? ' AND users.is_superadmin = true' : ''));
+        $query = "
+                SELECT count(*)
+                FROM users, sessions
+                WHERE sessions.token = :token
+                    AND sessions.user_id = users.id
+                    AND users.password = :password
+                    AND users.is_superadmin = :isSuperAdmin
+                    ";
+
         $params = array(
             ':token' => $sessionToken,
-            ':password' => $this->encryptPassword($password)
+            ':password' => $this->encryptPassword($password),
+            ':isSuperAdmin' => $superAdminOnly ? "true" : "false"
         );
 
+        $stmt = $this->pdoDBhandle->prepare($query);
         if ($stmt->execute($params)) {
             $queryResultCount = $stmt->fetchColumn();
             if ($queryResultCount === 1) {
@@ -249,9 +311,9 @@ class DBConnection {
         return $result;
     }
 
-    public function setMyPassword($token, $oldPassword, $newPassword)
+    public function setMyPassword($token, $oldPassword, $newPassword): bool
     {
-        $myreturn = false;
+        $return = false;
         if ($this->verifyCredentials($token, $oldPassword, false)) {
             $sqlUserId = $this->pdoDBhandle->prepare(
                 'SELECT users.id FROM users
@@ -271,13 +333,13 @@ class DBConnection {
                         if ($sql->execute(array(
                             ':user_id' => $first['id'],
                             ':password' => $this->encryptPassword($newPassword)))) {
-                            $myreturn = true;
+                            $return = true;
                         }
                     }
                 }
             }
         }
-        return $myreturn;
+        return $return;
     }
-}
 
+}
