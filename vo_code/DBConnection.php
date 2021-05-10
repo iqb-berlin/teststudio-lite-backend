@@ -6,8 +6,16 @@
 class DBConnection
 {
     protected $pdoDBhandle = false;
-    public string $errorMsg = ''; // only used by new (construct)
-    private int $idleTime = 60 * 60; // time the user token gets invalid
+
+    /**
+     * @var string Error message (only used by new (construct))
+     */
+    public string $errorMsg = '';
+
+    /**
+     * @var int number of seconds after which the the session maximum lifetime ends (user token becomes invalid)
+     */
+    private int $sessionMaxLifetime = 60 * 60;
 
     // __________________________
     public function __construct()
@@ -42,31 +50,48 @@ class DBConnection
     }
 
     /**
-     * @param string $token
-     * @param $id
-     * @return string
+     * @param string $sessionId Unique session identifier
+     * @param int $userId Unique user identifier
+     * @return string Unique session identifier on success or empty string on failure
      */
-    private function createSession(string $token, $id): string
+    private function createSession(string $sessionId, int $userId): string
     {
         $query = "
             INSERT INTO sessions (token, user_id, valid_until)
-                VALUES(:token, :user_id, :valid_until)
+                VALUES(:token, :userId, CURRENT_TIMESTAMP + :maxLifetime * interval '1 second')
             ";
+        //$sessionLifetime =  "$this->sessionMaxLifetime seconds";
+        //error_log("sessionLifetime = $sessionLifetime");
         $params = array(
-            ':token' => $token,
-            ':user_id' => $id,
-            ':valid_until' => date('Y-m-d G:i:s', time() + $this->idleTime)
+            ':token' => $sessionId,
+            ':userId' => $userId,
+            ':maxLifetime' => $this->sessionMaxLifetime
         );
 
+        error_log("PARAMS = " . json_encode($params));
         $statement = $this->pdoDBhandle->prepare($query);
 
-        return $statement->execute($params) ? $token : "";
+        return $statement->execute($params) ? $sessionId : "";
     }
 
     /**
-     * @param $userId
+     * @param string $sessionId Unique session identifier
      */
-    private function deleteSession($userId): void
+    private function deleteSession(string $sessionId): void
+    {
+        $query = "DELETE FROM sessions WHERE sessions.token = :sessionId";
+        $params = [
+            ':sessionId' => $sessionId
+        ];
+
+        $statement = $this->pdoDBhandle->prepare($query);
+        $statement->execute($params);
+    }
+
+    /**
+     * @param int $userId Unique user identifier
+     */
+    private function deleteSessionsByUserId(int $userId): void
     {
         $query = "DELETE FROM sessions WHERE sessions.user_id = :userId";
         $params = [
@@ -74,16 +99,64 @@ class DBConnection
         ];
 
         $statement = $this->pdoDBhandle->prepare($query);
-
-        if ($statement != false) {
-            $statement->execute($params);
-        }
+        $statement->execute($params);
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     * @return false|array User data, if username and password match otherwise false
+     * @param string $sessionId Unique session identifier
+     * @return bool True, if session has not expired, otherwise false
+     */
+    private function validateSession(string $sessionId): bool
+    {
+        $query = "
+            SELECT now() <= valid_until as isValid, valid_until, now() as now
+            FROM sessions
+            WHERE token = :sessionId
+            ";
+        $params = [
+            ":sessionId" => $sessionId
+        ];
+        $stmt = $this->pdoDBhandle->prepare($query);
+        $stmt->execute($params);
+
+        return $stmt->fetchColumn();
+    }
+
+    /**
+     * Checks the validity of the session for the passed session id.
+     * If session is valid, session lifetime will be updated,
+     * otherwise the session will be deleted.
+     *
+     * @param string $sessionId Unique session identifier
+     * @return bool TRUE, is session time can be refreshed, otherwise FALSE
+     */
+    protected function checkSession(string $sessionId): bool
+    {
+        if (isset($sessionId) && !empty($sessionId) && $this->validateSession($sessionId)) {
+            $query = "
+                UPDATE sessions
+                SET valid_until = CURRENT_TIMESTAMP + :maxLifetime * interval '1 second'
+                WHERE token = :sessionId
+            ";
+            $params = array(
+                ':maxLifetime' => $this->sessionMaxLifetime,
+                ':sessionId' => $sessionId
+            );
+
+            $stmt = $this->pdoDBhandle->prepare($query);
+            $isRefreshed = $stmt->execute($params);
+
+        } else {
+            $this->deleteSession($sessionId);
+        }
+
+        return $isRefreshed ?? false;
+    }
+
+    /**
+     * @param string $username Username
+     * @param string $password User password
+     * @return false|array User data, if username and password match, otherwise false
      */
     private function getUser(string $username, string $password): array
     {
@@ -111,26 +184,8 @@ class DBConnection
     }
 
     // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
-    // sets the valid_until of the token to now + idle
-    protected function refreshSession(string $token): void
-    {
-        $query = "
-            UPDATE sessions
-            SET valid_until =:value
-            WHERE token =:token
-        ";
-        $params = array(
-            ":value" => date('Y/m/d h:i:s a', time() + $this->idleTime),
-            ":token" => $token
-        );
-
-        $stmt = $this->pdoDBhandle->prepare($query);
-        $stmt->execute($params);
-    }
-
-    // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
     // encrypts password to introduce a very private way (salt)
-    protected function encryptPassword($password): string
+    protected function encryptPassword(string $password): string
     {
         return sha1('t' . $password);
     }
@@ -148,7 +203,7 @@ class DBConnection
 
             if ($user) {
                 // first: delete all sessions of this user if any
-                $this->deleteSession($user['id']);
+                $this->deleteSessionsByUserId($user['id']);
 
                 // create new token
                 $sessionToken = $this->createSession(uniqid('t', true), $user['id']);
@@ -182,7 +237,7 @@ class DBConnection
     // returns the name of the user with given (valid) token
     // returns '' if token not found or not valid
     // refreshes token
-    public function getLoginName($token)
+    public function getLoginName(string $token): string
     {
         $return = '';
         if ($this->pdoDBhandle != false and !empty($token)) {
@@ -198,7 +253,7 @@ class DBConnection
                     $first = $sql->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
-                        $this->refreshSession($token);
+                        $this->checkSession($token);
                         $return = $first['name'];
                     }
                 }
@@ -226,7 +281,7 @@ class DBConnection
                     $first = $sql->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
-                        $this->refreshSession($token);
+                        $this->checkSession($token);
                         $return = $first['is_superadmin'] == 'true';
                     }
                 }
@@ -254,7 +309,7 @@ class DBConnection
                     $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
-                        $this->refreshSession($token);
+                        $this->checkSession($token);
                         $sqlWorkspace = $this->pdoDBhandle->prepare(
                             'SELECT workspace_users.workspace_id FROM workspace_users
                                 WHERE workspace_users.workspace_id=:wsId and workspace_users.user_id=:userId');
@@ -272,24 +327,24 @@ class DBConnection
         return $return;
     }
 
-    function verifyCredentials($sessionToken, $password, $superAdminOnly): bool
+    function verifyCredentials(string $sessionToken, string $password, bool $superAdminOnly): bool
     {
         $result = false;
 
         $query = "
-                SELECT count(*)
-                FROM users, sessions
-                WHERE sessions.token = :token
-                    AND sessions.user_id = users.id
-                    AND users.password = :password
-                    AND users.is_superadmin = :isSuperAdmin
-                    ";
+            SELECT count(*)
+            FROM users, sessions
+            WHERE sessions.token = :token
+                AND sessions.user_id = users.id
+                AND users.password = :password
+                AND users.is_superadmin = :isSuperAdmin
+            ";
 
-        $params = array(
+        $params = [
             ':token' => $sessionToken,
             ':password' => $this->encryptPassword($password),
             ':isSuperAdmin' => $superAdminOnly ? "true" : "false"
-        );
+        ];
 
         $stmt = $this->pdoDBhandle->prepare($query);
         if ($stmt->execute($params)) {
@@ -309,7 +364,7 @@ class DBConnection
         return $result;
     }
 
-    public function setMyPassword($token, $oldPassword, $newPassword): bool
+    public function setMyPassword(string $token, string $oldPassword, string $newPassword): bool
     {
         $return = false;
         if ($this->verifyCredentials($token, $oldPassword, false)) {
@@ -325,7 +380,7 @@ class DBConnection
                     $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
 
                     if ($first != false) {
-                        $this->refreshSession($token);
+                        $this->checkSession($token);
                         $sql = $this->pdoDBhandle->prepare(
                             'UPDATE users SET password = :password WHERE id = :user_id');
                         if ($sql->execute(array(

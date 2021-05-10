@@ -145,7 +145,7 @@ class DBConnectionAuthoring extends DBConnection
 
                 $data = $sql->fetchAll(PDO::FETCH_ASSOC);
                 if ($data != false) {
-                    $this->refreshSession($token);
+                    $this->checkSession($token);
                     $myreturn = $data;
                 }
             }
