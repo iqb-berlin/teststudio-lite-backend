@@ -255,32 +255,24 @@ class DBConnection
         return $userName ?? "";
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns true if the user with given (valid) token is super admin
-    // refreshes token
-    public function isSuperAdmin($token): bool
+    /**
+     * @param string $sessionId Unique session identifier
+     * @return bool TRUE, if the user is a super admin, otherwise FALSE
+     */
+    public function isSuperAdmin(string $sessionId): bool
     {
-        $return = false;
-        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT users.is_superadmin FROM users
-                    INNER JOIN sessions ON users.id = sessions.user_id
-                    WHERE sessions.token=:token');
+        if ($this->checkSession($sessionId)) {
+            $stmt = $this->pdoDBhandle->prepare("
+                SELECT users.is_superadmin FROM users
+                INNER JOIN sessions ON users.id = sessions.user_id
+                WHERE sessions.token = :sessionId
+                ");
 
-            if ($sql != false) {
-                if ($sql->execute(array(
-                    ':token' => $token))) {
-
-                    $first = $sql->fetch(PDO::FETCH_ASSOC);
-
-                    if ($first != false) {
-                        $this->checkSession($token);
-                        $return = $first['is_superadmin'] == 'true';
-                    }
-                }
-            }
+            $stmt->execute([':sessionId' => $sessionId]);
+            $isSuperAdmin = $stmt->fetchColumn();
         }
-        return $return;
+
+        return $isSuperAdmin ?? false;
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
