@@ -233,33 +233,26 @@ class DBConnection
         return $result ?? false;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns the name of the user with given (valid) token
-    // returns '' if token not found or not valid
-    // refreshes token
-    public function getLoginName(string $token): string
+    /**
+     * @param string $sessionId Unique session identifier
+     * @return string Name of the user, if session is valid, otherwise empty String ("")
+     */
+    public function getLoginName(string $sessionId): string
     {
-        $return = '';
-        if ($this->pdoDBhandle != false and !empty($token)) {
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT users.name FROM users
-                    INNER JOIN sessions ON users.id =sessions.user_id
-                    WHERE sessions.token=:token');
+        if ($this->checkSession($sessionId)) {
+            $stmt = $this->pdoDBhandle->prepare("
+                    SELECT users.name
+                    FROM sessions, users
+                    WHERE sessions.token = :sessionId
+                        AND users.id =sessions.user_id
+                    ");
+            $stmt->bindParam(':sessionId', $sessionId);
+            $stmt->execute();
 
-            if ($sql != false) {
-                if ($sql->execute(array(
-                    ':token' => $token))) {
-
-                    $first = $sql->fetch(PDO::FETCH_ASSOC);
-
-                    if ($first != false) {
-                        $this->checkSession($token);
-                        $return = $first['name'];
-                    }
-                }
-            }
+            $userName = $stmt->fetchColumn();
         }
-        return $return;
+
+        return $userName ?? "";
     }
 
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
