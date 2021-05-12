@@ -337,35 +337,39 @@ class DBConnection
         return $result;
     }
 
-    public function setMyPassword(string $token, string $oldPassword, string $newPassword): bool
+    /**
+     * @param string $sessionId Unique session identifier
+     * @param string $oldPassword The old password
+     * @param string $newPassword The new password
+     * @return bool TRUE, if password change is successful, otherwise FALSE
+     */
+    public function changePassword(string $sessionId, string $oldPassword, string $newPassword): bool
     {
-        $return = false;
-        if ($this->verifyCredentials($token, $oldPassword, false)) {
-            $sqlUserId = $this->pdoDBhandle->prepare(
-                'SELECT users.id FROM users
-                    INNER JOIN sessions ON users.id = sessions.user_id
-                    WHERE sessions.token=:token');
+        if ($this->checkSession($sessionId) && $this->verifyCredentials($sessionId, $oldPassword, false)) {
+            $stmt = $this->pdoDBhandle->prepare("
+                SELECT users.id FROM users
+                INNER JOIN sessions ON users.id = sessions.user_id
+                WHERE sessions.token = :sessionId
+                ");
 
-            if ($sqlUserId != false) {
-                if ($sqlUserId->execute(array(
-                    ':token' => $token))) {
+            $stmt->execute([':sessionId' => $sessionId]);
 
-                    $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
+            $userId = $stmt->fetchColumn();
 
-                    if ($first != false) {
-                        $this->checkSession($token);
-                        $sql = $this->pdoDBhandle->prepare(
-                            'UPDATE users SET password = :password WHERE id = :user_id');
-                        if ($sql->execute(array(
-                            ':user_id' => $first['id'],
-                            ':password' => $this->encryptPassword($newPassword)))) {
-                            $return = true;
-                        }
-                    }
-                }
+            if ($userId != false) {
+                $sql = $this->pdoDBhandle->prepare("
+                    UPDATE users
+                    SET password = :password
+                    WHERE id = :user_id
+                ");
+                $isPasswordUpdated = $sql->execute([
+                    ':user_id' => $userId['id'],
+                    ':password' => $this->encryptPassword($newPassword)
+                ]);
             }
         }
-        return $return;
+
+        return $isPasswordUpdated ?? false;
     }
 
 }
