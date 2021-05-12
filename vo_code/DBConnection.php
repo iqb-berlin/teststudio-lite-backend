@@ -60,15 +60,12 @@ class DBConnection
             INSERT INTO sessions (token, user_id, valid_until)
                 VALUES(:token, :userId, CURRENT_TIMESTAMP + :maxLifetime * interval '1 second')
             ";
-        //$sessionLifetime =  "$this->sessionMaxLifetime seconds";
-        //error_log("sessionLifetime = $sessionLifetime");
         $params = array(
             ':token' => $sessionId,
             ':userId' => $userId,
             ':maxLifetime' => $this->sessionMaxLifetime
         );
 
-        error_log("PARAMS = " . json_encode($params));
         $statement = $this->pdoDBhandle->prepare($query);
 
         return $statement->execute($params) ? $sessionId : "";
@@ -275,41 +272,32 @@ class DBConnection
         return $isSuperAdmin ?? false;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns true if the user with given (valid) token is super admin
-    // refreshes token
-    public function canAccessWorkspace($token, $workspaceId): bool
+    /**
+     * @param string $sessionId Unique session identifier
+     * @param int $workspaceId Unique workspace identifier
+     * @return bool TRUE, if session is valid and user can access the workspace, otherwise FALSE
+     */
+    public function canAccessWorkspace(string $sessionId, int $workspaceId): bool
     {
         $return = false;
-        if (($this->pdoDBhandle != false) and (strlen($token) > 0)) {
-            $sqlUserId = $this->pdoDBhandle->prepare(
-                'SELECT users.id FROM users
-                    INNER JOIN sessions ON users.id = sessions.user_id
-                    WHERE sessions.token=:token');
+        if ($this->checkSession($sessionId)) {
+            $stmt = $this->pdoDBhandle->prepare("
+                SELECT workspace_users.workspace_id FROM workspace_users, sessions, users
+                WHERE sessions.token = :sessionId
+                    AND workspace_users.workspace_id = :wsId
+                    AND users.id = sessions.user_id
+                    AND workspace_users.user_id = users.id
+                ");
 
-            if ($sqlUserId != false) {
-                if ($sqlUserId->execute(array(
-                    ':token' => $token))) {
+            $stmt->execute([
+                ':sessionId' => $sessionId,
+                ':wsId' => $workspaceId
+                ]);
+            $first = $stmt->fetchColumn();
 
-                    $first = $sqlUserId->fetch(PDO::FETCH_ASSOC);
-
-                    if ($first != false) {
-                        $this->checkSession($token);
-                        $sqlWorkspace = $this->pdoDBhandle->prepare(
-                            'SELECT workspace_users.workspace_id FROM workspace_users
-                                WHERE workspace_users.workspace_id=:wsId and workspace_users.user_id=:userId');
-
-                        if ($sqlWorkspace->execute(array(
-                            ':wsId' => $workspaceId, ':userId' => $first['id']))) {
-
-                            $first = $sqlWorkspace->fetch(PDO::FETCH_ASSOC);
-                            $return = $first != false;
-                        }
-                    }
-                }
-            }
         }
-        return $return;
+
+        return isset($first) && $first != false;
     }
 
     function verifyCredentials(string $sessionToken, string $password, bool $superAdminOnly): bool
