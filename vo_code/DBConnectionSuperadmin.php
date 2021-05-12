@@ -24,31 +24,30 @@ class DBConnectionSuperAdmin extends DBConnection
         return $myreturn;
     }
 
-    // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
-    // returns all workspaces if the user associated with the given token is superadmin
-    // returns [] if token not valid or no workspaces 
-    // token is refreshed via isSuperAdmin
-    public function getWorkspaces($token)
+    /**
+     * @param string $sessionToken Session token (refreshed via 'isSuperAdmin' function call)
+     * @return null|array
+     * <p>Null, if session token is invalid, user is not a super admin,</p>
+     * <p>otherwise an array of all workspace id, workspace name, workspace group id, and workspace group name quadruples</p>
+     */
+    public function getWorkspaces(?string $sessionToken): ?array
     {
-        $myreturn = [];
-        if ($this->isSuperAdmin($token)) {
-            $sql = $this->pdoDBhandle->prepare(
-                'SELECT workspaces.id as id,
-                            workspaces.name as label,
-                            workspace_groups.id as ws_group_id,
-                            workspace_groups.name as ws_group_name FROM workspaces 
-                        INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
-                        ORDER BY workspaces.name');
-
-            if ($sql->execute()) {
-
-                $data = $sql->fetchAll(PDO::FETCH_ASSOC);
-                if ($data != false) {
-                    $myreturn = $data;
-                }
-            }
+        if (!empty($sessionToken) && $this->isSuperAdmin($sessionToken)) {
+            $query = "
+                        SELECT workspaces.id as id,
+                               workspaces.name as label,
+                               workspace_groups.id as ws_group_id,
+                               workspace_groups.name as ws_group_name
+                        FROM workspaces
+                            INNER JOIN workspace_groups ON workspaces.group_id = workspace_groups.id
+                        ORDER BY workspace_groups.name, workspaces.name
+                        ";
+            $stmt = $this->pdoDBhandle->prepare($query);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-        return $myreturn;
+
+        return $result ?? null;
     }
 
     public function getWorkspaceGroups($token)
@@ -376,6 +375,7 @@ class DBConnectionSuperAdmin extends DBConnection
         }
         return $myreturn;
     }
+
     // / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
     public function deleteWorkspaces($token, $wsIds)
     {
@@ -403,7 +403,7 @@ class DBConnectionSuperAdmin extends DBConnection
                 'DELETE FROM workspace_groups
                     WHERE workspace_groups.id = :wsg_id');
 
-            return $sql->execute(array(':wsg_id' => $wsgId)) ;
+            return $sql->execute(array(':wsg_id' => $wsgId));
         }
         return false;
     }
@@ -499,15 +499,16 @@ class DBConnectionSuperAdmin extends DBConnection
         return $myreturn;
     }
 
-    public function addWorkspaceGroup($token, $name): int {
-         if ($this->isSuperAdmin($token)) {
-             $sql = $this->pdoDBhandle->prepare(
-                 'INSERT INTO workspace_groups (name) VALUES (:wsg_name)');
+    public function addWorkspaceGroup($token, $name): int
+    {
+        if ($this->isSuperAdmin($token)) {
+            $sql = $this->pdoDBhandle->prepare(
+                'INSERT INTO workspace_groups (name) VALUES (:wsg_name)');
 
-             if ($sql->execute([':wsg_name' => $name])) {
-                 return $this->pdoDBhandle->lastInsertId();
-             }
-         }
+            if ($sql->execute([':wsg_name' => $name])) {
+                return $this->pdoDBhandle->lastInsertId();
+            }
+        }
         return 0;
     }
 }

@@ -4,38 +4,40 @@
 // 2018
 // license: MIT
 
-	// preflight OPTIONS-Request bei CORS
-	if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-		exit();
-	} else {
-		require_once('../vo_code/DBConnectionSuperadmin.php');
+// preflight OPTIONS-Request bei CORS
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit();
 
-		// *****************************************************************
+} else {
+    require_once('../vo_code/DBConnectionSuperadmin.php');
 
-		$myreturn = [];
+    // *****************************************************************
 
-		$myerrorcode = 503;
+    $return = [];
+    $errorCode = 0;
+    $dbConnection = new DBConnectionSuperadmin();
 
-		$myDBConnection = new DBConnectionSuperadmin();
-		if (!$myDBConnection->isError()) {
-			$myerrorcode = 401;
+    if ($dbConnection->isError()) {
+        $errorCode = 503;
 
-			$data = json_decode(file_get_contents('php://input'), true);
-			$myToken = $data["t"];
-			if (isset($myToken)) {
-				$users = $myDBConnection->getWorkspaces($myToken);
-				if (count($users) > 0) {
-					$myerrorcode = 0;
-					$myreturn = $users;
-				}
-			}
-		}        
-		unset($myDBConnection);
+    } else {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $workspaces = $dbConnection->getWorkspaces($data["t"]);
 
-		if ($myerrorcode > 0) {
-			http_response_code($myerrorcode);
-		} else {
-			echo(json_encode($myreturn));
-		}
-	}
-?>
+        if (is_null($workspaces) || empty($workspaces)) {
+            $errorCode = 401;
+
+        } else {
+            $return = $workspaces;
+        }
+    }
+
+    unset($dbConnection);
+
+    if ($errorCode > 0) {
+        http_response_code($errorCode);
+
+    } else {
+        echo(json_encode($return));
+    }
+}
