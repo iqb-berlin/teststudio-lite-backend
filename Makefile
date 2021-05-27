@@ -11,7 +11,7 @@ down:
 	cd docker && docker-compose down
 
 init:
-	wget https://raw.githubusercontent.com/iqb-berlin/iqb-scripts/master/new_version.py
+	wget -P scripts https://raw.githubusercontent.com/iqb-berlin/iqb-scripts/master/new_version.py
 
 build:
 	cd docker && docker-compose build
