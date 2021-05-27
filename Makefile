@@ -10,8 +10,14 @@ stop:
 down:
 	cd docker && docker-compose down
 
+init:
+	wget https://raw.githubusercontent.com/iqb-berlin/iqb-scripts/master/new_version.py
+
 build:
 	cd docker && docker-compose build
+
+test:
+	echo "There are not tests yet... :-("
 
 data-source:
 	scripts/make_data_source.sh $(DB_HOST) $(DB_PORT) $(DB_SCHEMA) $(DB_USER) $(DB_PASSWORD)
